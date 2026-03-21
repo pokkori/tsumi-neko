@@ -6,10 +6,11 @@ import {
   StyleSheet,
   Animated,
   SafeAreaView,
+  Platform,
 } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { formatScore, formatHeight } from "../src/utils/format";
-import { shareResult, generateEmojiGrid } from "../src/utils/share";
+import { shareResult, generateEmojiGrid, generateShareImage } from "../src/utils/share";
 import { loadData } from "../src/utils/storage";
 import { COLORS } from "../src/constants/colors";
 import { CatShapeId } from "../src/types";
@@ -40,15 +41,34 @@ export default function ResultScreen() {
     : [];
 
   const [currentStreak, setCurrentStreak] = useState<number>(0);
+  const [previewDataUrl, setPreviewDataUrl] = useState<string | null>(null);
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(0.8)).current;
+  const confettiAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     loadData("@tsumineko/stats").then((stats) => {
       setCurrentStreak(stats.currentStreak);
     });
   }, []);
+
+  useEffect(() => {
+    if (Platform.OS === "web") {
+      generateShareImage({ score, height, catCount, maxCombo, mergeCount, isNewRecord, shapesUsed, maxEvolution })
+        .then((url) => { if (url) setPreviewDataUrl(url); });
+    }
+  }, []);
+
+  useEffect(() => {
+    if (isNewRecord) {
+      Animated.sequence([
+        Animated.timing(confettiAnim, { toValue: 1, duration: 600, useNativeDriver: true }),
+        Animated.timing(confettiAnim, { toValue: 0.8, duration: 300, useNativeDriver: true }),
+        Animated.timing(confettiAnim, { toValue: 1, duration: 300, useNativeDriver: true }),
+      ]).start();
+    }
+  }, [isNewRecord]);
 
   useEffect(() => {
     Animated.parallel([
@@ -102,9 +122,17 @@ export default function ResultScreen() {
         <Text style={styles.gameOverText}>GAME OVER</Text>
 
         {isNewRecord && (
-          <View style={styles.newRecordBanner}>
-            <Text style={styles.newRecordText}>NEW RECORD!</Text>
-          </View>
+          <Animated.View
+            style={[
+              styles.newRecordBanner,
+              {
+                transform: [{ scale: confettiAnim.interpolate({ inputRange: [0, 1], outputRange: [0.9, 1.1] }) }],
+                opacity: confettiAnim.interpolate({ inputRange: [0, 1], outputRange: [0.7, 1] }),
+              },
+            ]}
+          >
+            <Text style={styles.newRecordText}>🎉 NEW RECORD! 🎉</Text>
+          </Animated.View>
         )}
 
         {/* Score Card */}
@@ -144,8 +172,13 @@ export default function ResultScreen() {
           </View>
         )}
 
-        {/* Emoji Grid Preview */}
-        {emojiPreview ? (
+        {/* OGP Image Preview (web) or Emoji Grid (native) */}
+        {previewDataUrl && Platform.OS === "web" ? (
+          <View style={styles.emojiCard}>
+            {/* @ts-ignore web-only img element */}
+            <img src={previewDataUrl} style={{ width: "100%", borderRadius: 8, maxHeight: 200, objectFit: "cover" }} alt="score card" />
+          </View>
+        ) : emojiPreview ? (
           <View style={styles.emojiCard}>
             <Text style={styles.emojiGrid}>{emojiPreview}</Text>
           </View>

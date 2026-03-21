@@ -27,7 +27,10 @@
     "web": {
       "bundler": "metro",
       "output": "static",
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/favicon.png",
+      "title": "つみネコ - 猫を積み上げて進化！物理スタッキングゲーム",
+      "description": "猫を積み上げて合体させて進化！Matter.js物理演算で遊べる無料の猫タワーゲーム。",
+      "themeColor": "#FF6B6B"
     },
     "plugins": [
       "expo-router",

@@ -108,6 +108,13 @@ export default function TitleScreen() {
         <Text style={styles.statsText}>
           📏 Max: {formatHeight(stats.bestHeight)}
         </Text>
+        {stats.currentStreak >= 2 && (
+          <View style={styles.streakBadge}>
+            <Text style={styles.streakBadgeText}>
+              🔥 {stats.currentStreak}日連続！
+            </Text>
+          </View>
+        )}
       </View>
 
       {/* Footer Buttons */}
@@ -223,6 +230,20 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: COLORS.text,
     marginVertical: 2,
+  },
+  streakBadge: {
+    marginTop: 8,
+    backgroundColor: "rgba(255, 165, 0, 0.25)",
+    borderRadius: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 6,
+    borderWidth: 1,
+    borderColor: "rgba(255, 165, 0, 0.6)",
+  },
+  streakBadgeText: {
+    fontSize: 15,
+    fontWeight: "bold",
+    color: "#FFA500",
   },
   footer: {
     flexDirection: "row",
