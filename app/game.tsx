@@ -13,6 +13,7 @@ import { useGameState } from "../src/hooks/useGameState";
 import { useGameStore } from "../src/stores/gameStore";
 import { useDailyChallenge } from "../src/hooks/useDailyChallenge";
 import { ChallengeConfig } from "../src/engine/GameLoop";
+import { resumeAudioContext } from "../src/utils/sound";
 import { CatBody } from "../src/components/CatBody";
 import { ScoreDisplay } from "../src/components/ScoreDisplay";
 import { ComboPopup } from "../src/components/ComboPopup";
@@ -108,6 +109,7 @@ export default function GameScreen() {
 
   const handleTap = () => {
     if (paused) return;
+    resumeAudioContext();
     onTap();
   };
 
