@@ -46,12 +46,11 @@ export class CatSpawner {
     Matter.Body.setVelocity(body, { x: 0, y: 0 });
   }
 
-  moveCatHorizontal(body: Matter.Body, direction: number): void {
-    const newX = body.position.x + direction * PHYSICS.HORIZONTAL_SPEED;
+  setPosition(body: Matter.Body, x: number): void {
     const halfWidth = 40;
     const minX = halfWidth;
     const maxX = SCREEN_WIDTH - halfWidth;
-    const clampedX = Math.max(minX, Math.min(maxX, newX));
+    const clampedX = Math.max(minX, Math.min(maxX, x));
     Matter.Body.setPosition(body, { x: clampedX, y: body.position.y });
   }
 }

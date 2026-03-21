@@ -20,7 +20,6 @@ export class GameLoop {
   private collapse: CollapseDetector;
   scorer: ScoreCalculator;
 
-  private horizontalDirection: number = 1;
   private slowMotionFrames: number = 0;
   private forceShapeId: CatShapeId | undefined;
   private bodyShapeMap: Map<number, CatShapeId> = new Map();
@@ -348,10 +347,18 @@ export class GameLoop {
 
     this.state.nextShapeId = this.spawner.selectNextShape(this.forceShapeId);
     this.state.phase = "idle";
-    this.horizontalDirection = 1;
   }
 
-  onTap(): void {
+  setDropPosition(x: number): void {
+    if (this.state.phase !== "idle" || !this.state.currentCat) return;
+
+    const body = this.getBodyById(this.state.currentCat.bodyId);
+    if (!body) return;
+
+    this.spawner.setPosition(body, x);
+  }
+
+  onDrop(): void {
     if (this.state.phase !== "idle" || !this.state.currentCat) return;
 
     const body = this.getBodyById(this.state.currentCat.bodyId);
@@ -398,16 +405,7 @@ export class GameLoop {
   }
 
   private updateIdle(): void {
-    if (!this.state.currentCat) return;
-    const body = this.getBodyById(this.state.currentCat.bodyId);
-    if (!body) return;
-
-    // Apply mirror input if challenge active
-    const dir = this.challengeParams.mirrorInput ? -this.horizontalDirection : this.horizontalDirection;
-    this.spawner.moveCatHorizontal(body, dir);
-
-    if (body.position.x >= SCREEN_WIDTH - 40) this.horizontalDirection = -1;
-    if (body.position.x <= 40) this.horizontalDirection = 1;
+    // No auto-movement: position is controlled by PanResponder drag in game.tsx
   }
 
   private applyWindForce(): void {

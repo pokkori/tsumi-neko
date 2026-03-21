@@ -56,7 +56,7 @@ export default function ResultScreen() {
   }, []);
 
   const handleShare = () => {
-    shareResult({ score, height, catCount, isNewRecord, mergeCount, shapesUsed });
+    shareResult({ score, height, catCount, isNewRecord, mergeCount, shapesUsed, maxCombo });
   };
 
   // Generate emoji preview for display

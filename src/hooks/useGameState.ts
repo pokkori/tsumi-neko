@@ -77,8 +77,12 @@ export function useGameState(skinId: SkinId = "mike", forceShapeId?: CatShapeId,
     setIsRunning(true);
   }, [skinId, forceShapeId, store.settings.hapticsEnabled, challengeConfig]);
 
-  const onTap = useCallback(() => {
-    gameLoopRef.current?.onTap();
+  const onDrop = useCallback(() => {
+    gameLoopRef.current?.onDrop();
+  }, []);
+
+  const setDropPosition = useCallback((x: number) => {
+    gameLoopRef.current?.setDropPosition(x);
   }, []);
 
   useEffect(() => {
@@ -191,7 +195,8 @@ export function useGameState(skinId: SkinId = "mike", forceShapeId?: CatShapeId,
     gameState,
     isRunning,
     startGame,
-    onTap,
+    onDrop,
+    setDropPosition,
     continueFromReward,
   };
 }

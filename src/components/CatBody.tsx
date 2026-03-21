@@ -1,8 +1,30 @@
 import React from "react";
-import { View, Text, StyleSheet } from "react-native";
+import { View, Text, StyleSheet, Platform } from "react-native";
 import { ActiveCat, FaceExpression, CatShapeId } from "../types";
 import { CAT_SHAPES } from "../data/catShapes";
 import { CAT_SKINS } from "../data/catSkins";
+
+// Conditionally import SVG - only available on native/web with react-native-svg
+let Svg: any = null;
+let Path: any = null;
+let Circle: any = null;
+let Rect: any = null;
+let G: any = null;
+let Ellipse: any = null;
+let Line: any = null;
+
+try {
+  const svgModule = require("react-native-svg");
+  Svg = svgModule.Svg || svgModule.default;
+  Path = svgModule.Path;
+  Circle = svgModule.Circle;
+  Rect = svgModule.Rect;
+  G = svgModule.G;
+  Ellipse = svgModule.Ellipse;
+  Line = svgModule.Line;
+} catch {
+  // SVG not available, will fall back to View-based rendering
+}
 
 // Evolution stage index (0=tiny -> 9=chunky)
 const EVOLUTION_STAGE: Record<CatShapeId, number> = {
@@ -18,18 +40,18 @@ const EVOLUTION_STAGE: Record<CatShapeId, number> = {
   chunky: 9,
 };
 
-// Stage-based body color overlay (blended with skin color)
-const STAGE_ACCENT_COLORS: Record<number, string> = {
-  0: "#FFB6C1", // pink
-  1: "#FFA07A", // light salmon
-  2: "#FFD700", // gold
-  3: "#98FB98", // pale green
-  4: "#DEB887", // burlywood
-  5: "#87CEEB", // sky blue
-  6: "#DDA0DD", // plum
-  7: "#FF6347", // tomato
-  8: "#F0E68C", // khaki gold
-  9: "#FF69B4", // hot pink (rainbow aura)
+// Stage-based body colors
+const STAGE_BODY_COLORS: Record<number, string> = {
+  0: "#FFE4E1", // misty rose
+  1: "#FFF8E7", // cream
+  2: "#FFE4B5", // moccasin
+  3: "#E8F5E9", // pale green
+  4: "#D7CCC8", // warm gray
+  5: "#E3F2FD", // light blue
+  6: "#F3E5F5", // light purple
+  7: "#FFCCBC", // light orange
+  8: "#FFF9C4", // light yellow
+  9: "#FCE4EC", // pink
 };
 
 // Stage-based border/accent color for differentiation
@@ -46,6 +68,35 @@ const STAGE_BORDER_COLORS: Record<number, string> = {
   9: "#FF1493",
 };
 
+// Pattern types per stage (トラ柄, 三毛, etc.)
+const STAGE_PATTERNS: Record<number, string> = {
+  0: "none",       // ちびネコ - plain
+  1: "none",       // まんまるネコ - plain
+  2: "tora",       // ながながネコ - トラ柄
+  3: "mike",       // ぺたんこネコ - 三毛
+  4: "tora",       // 食パンネコ - トラ柄
+  5: "none",       // おすわりネコ - plain
+  6: "mike",       // まるまりネコ - 三毛
+  7: "tora",       // でぶネコ - トラ柄
+  8: "mike",       // のびのびネコ - 三毛
+  9: "none",       // ずんぐりネコ - rainbow aura instead
+};
+
+// Accessory per stage
+// Stage 0: none, 1: none, 2: リボン, 3: 鈴, 4: マフラー, 5: 王冠, 6: 天使の輪, 7: 蝶ネクタイ, 8: マント, 9: 虹オーラ
+const STAGE_ACCESSORY: Record<number, string> = {
+  0: "none",
+  1: "none",
+  2: "ribbon",
+  3: "bell",
+  4: "scarf",
+  5: "crown",
+  6: "halo",
+  7: "bowtie",
+  8: "cape",
+  9: "rainbow",
+};
+
 interface CatBodyProps {
   cat: ActiveCat;
   cameraY: number;
@@ -60,11 +111,290 @@ export const CatBody: React.FC<CatBodyProps> = React.memo(({ cat, cameraY }) => 
   const w = shape.width;
   const h = shape.height;
 
-  // Eye size scales with stage (bigger = cuter at higher stages)
+  // If SVG is available, render SVG cat
+  if (Svg && Path && Circle) {
+    return (
+      <View
+        style={[
+          styles.container,
+          {
+            left: cat.position.x - w / 2,
+            top: cat.position.y + cameraY - h / 2,
+            width: w,
+            height: h,
+            transform: [{ rotate: `${cat.angle}rad` }],
+          },
+        ]}
+      >
+        <Svg width={w} height={h} viewBox={`0 0 ${w + 10} ${h + 10}`}>
+          <G transform={`translate(5, 5)`}>
+            {/* Rainbow Aura for stage 9 */}
+            {stage === 9 && (
+              <SvgRainbowAura width={w} height={h} />
+            )}
+
+            {/* Body shape from svgPath */}
+            <Path
+              d={shape.svgPath}
+              fill={skin.bodyColor}
+              stroke={STAGE_BORDER_COLORS[stage]}
+              strokeWidth={2 + Math.floor(stage / 3)}
+            />
+
+            {/* Pattern overlay (トラ柄 or 三毛) */}
+            {STAGE_PATTERNS[stage] === "tora" && (
+              <SvgToraPattern width={w} height={h} stage={stage} />
+            )}
+            {STAGE_PATTERNS[stage] === "mike" && skin.patternSvg && (
+              <Path
+                d={skin.patternSvg}
+                fill={skin.patternColor || "#D4722C"}
+                opacity={0.5}
+              />
+            )}
+
+            {/* Eyes */}
+            <SvgEyes w={w} h={h} stage={stage} eyeColor={skin.eyeColor} />
+
+            {/* Nose */}
+            <Circle
+              cx={w / 2}
+              cy={h / 2 + 2}
+              r={2 + stage * 0.2}
+              fill={skin.noseColor}
+            />
+
+            {/* Mouth for stage >= 3 */}
+            {stage >= 3 && (
+              <Path
+                d={`M${w / 2 - 3},${h / 2 + 4} Q${w / 2},${h / 2 + 7} ${w / 2 + 3},${h / 2 + 4}`}
+                fill="none"
+                stroke={skin.noseColor}
+                strokeWidth={1}
+              />
+            )}
+
+            {/* Whiskers for stage >= 2 */}
+            {stage >= 2 && (
+              <SvgWhiskers w={w} h={h} stage={stage} />
+            )}
+
+            {/* Accessories */}
+            <SvgAccessory stage={stage} w={w} h={h} />
+          </G>
+        </Svg>
+
+        {/* Expression overlay (kept as Text for emoji) */}
+        <View style={styles.expressionContainer}>
+          <ExpressionIndicator expression={cat.expression} stage={stage} />
+        </View>
+      </View>
+    );
+  }
+
+  // Fallback: View-based rendering (same as before)
+  return <ViewBasedCatBody cat={cat} cameraY={cameraY} />;
+});
+
+// ============= SVG Sub-components =============
+
+const SvgRainbowAura: React.FC<{ width: number; height: number }> = ({ width, height }) => (
+  <>
+    <Ellipse
+      cx={width / 2}
+      cy={height / 2}
+      rx={width / 2 + 6}
+      ry={height / 2 + 6}
+      fill="rgba(255,255,200,0.15)"
+      stroke="rgba(255,215,0,0.6)"
+      strokeWidth={3}
+    />
+    <Circle cx={width * 0.3} cy={-2} r={2.5} fill="#FFD700" />
+    <Circle cx={width + 2} cy={height * 0.3} r={2} fill="#FF69B4" />
+    <Circle cx={width * 0.5} cy={height + 2} r={2} fill="#87CEEB" />
+    <Circle cx={-2} cy={height * 0.5} r={1.5} fill="#98FB98" />
+  </>
+);
+
+const SvgToraPattern: React.FC<{ width: number; height: number; stage: number }> = ({ width, height, stage }) => {
+  const stripeCount = 3 + Math.floor(stage / 3);
+  const stripes = [];
+  for (let i = 0; i < stripeCount; i++) {
+    const x = (width / (stripeCount + 1)) * (i + 1);
+    stripes.push(
+      <Line
+        key={i}
+        x1={x - 3}
+        y1={height * 0.25}
+        x2={x + 3}
+        y2={height * 0.65}
+        stroke="#8B4513"
+        strokeWidth={2}
+        opacity={0.35}
+        strokeLinecap="round"
+      />
+    );
+  }
+  return <>{stripes}</>;
+};
+
+const SvgEyes: React.FC<{ w: number; h: number; stage: number; eyeColor: string }> = ({ w, h, stage, eyeColor }) => {
+  const eyeSize = 3 + stage * 0.4;
+  const eyeGap = 4 + stage * 0.5;
+  const eyeY = h / 2 - 2;
+
+  return (
+    <>
+      {/* Left eye */}
+      <Ellipse
+        cx={w / 2 - eyeGap}
+        cy={eyeY}
+        rx={eyeSize}
+        ry={eyeSize + 1}
+        fill={eyeColor}
+      />
+      {/* Left eye sparkle for stage >= 4 */}
+      {stage >= 4 && (
+        <Circle
+          cx={w / 2 - eyeGap + eyeSize * 0.3}
+          cy={eyeY - eyeSize * 0.3}
+          r={eyeSize * 0.2}
+          fill="#FFFFFF"
+        />
+      )}
+      {/* Right eye */}
+      <Ellipse
+        cx={w / 2 + eyeGap}
+        cy={eyeY}
+        rx={eyeSize}
+        ry={eyeSize + 1}
+        fill={eyeColor}
+      />
+      {/* Right eye sparkle for stage >= 4 */}
+      {stage >= 4 && (
+        <Circle
+          cx={w / 2 + eyeGap + eyeSize * 0.3}
+          cy={eyeY - eyeSize * 0.3}
+          r={eyeSize * 0.2}
+          fill="#FFFFFF"
+        />
+      )}
+    </>
+  );
+};
+
+const SvgWhiskers: React.FC<{ w: number; h: number; stage: number }> = ({ w, h, stage }) => {
+  const len = 8 + stage * 0.8;
+  const cy = h / 2 + 1;
+  return (
+    <>
+      {/* Left whiskers */}
+      <Line x1={4} y1={cy - 2} x2={4 - len} y2={cy - 4} stroke="rgba(0,0,0,0.2)" strokeWidth={0.8} />
+      <Line x1={4} y1={cy + 2} x2={4 - len} y2={cy + 4} stroke="rgba(0,0,0,0.2)" strokeWidth={0.8} />
+      {/* Right whiskers */}
+      <Line x1={w - 4} y1={cy - 2} x2={w - 4 + len} y2={cy - 4} stroke="rgba(0,0,0,0.2)" strokeWidth={0.8} />
+      <Line x1={w - 4} y1={cy + 2} x2={w - 4 + len} y2={cy + 4} stroke="rgba(0,0,0,0.2)" strokeWidth={0.8} />
+    </>
+  );
+};
+
+const SvgAccessory: React.FC<{ stage: number; w: number; h: number }> = ({ stage, w, h }) => {
+  const accessory = STAGE_ACCESSORY[stage];
+  if (!accessory || accessory === "none") return null;
+
+  switch (accessory) {
+    case "ribbon":
+      return (
+        <Circle
+          cx={w * 0.2}
+          cy={h * 0.7}
+          r={4}
+          fill="#FF69B4"
+          stroke="#FF1493"
+          strokeWidth={1}
+        />
+      );
+    case "bell":
+      return (
+        <>
+          <Circle cx={w / 2} cy={h * 0.8} r={5} fill="#FFD700" stroke="#DAA520" strokeWidth={1} />
+          <Circle cx={w / 2} cy={h * 0.8 + 2} r={1.5} fill="#B8860B" />
+        </>
+      );
+    case "scarf":
+      return (
+        <Rect
+          x={2}
+          y={h * 0.85}
+          width={w - 4}
+          height={5}
+          rx={2.5}
+          fill="#E74C3C"
+          opacity={0.8}
+        />
+      );
+    case "crown":
+      return (
+        <Path
+          d={`M${w * 0.25},-4 L${w * 0.35},-14 L${w * 0.45},-6 L${w * 0.55},-16 L${w * 0.65},-6 L${w * 0.75},-14 L${w * 0.8},-4 Z`}
+          fill="#FFD700"
+          stroke="#DAA520"
+          strokeWidth={1}
+        />
+      );
+    case "halo":
+      return (
+        <Ellipse
+          cx={w / 2}
+          cy={-6}
+          rx={w * 0.22}
+          ry={4}
+          fill="rgba(255,215,0,0.3)"
+          stroke="#FFD700"
+          strokeWidth={2}
+        />
+      );
+    case "bowtie":
+      return (
+        <Path
+          d={`M${w / 2 - 8},${h * 0.8} L${w / 2 - 3},${h * 0.8 - 4} L${w / 2 - 3},${h * 0.8 + 4} Z M${w / 2 + 8},${h * 0.8} L${w / 2 + 3},${h * 0.8 - 4} L${w / 2 + 3},${h * 0.8 + 4} Z`}
+          fill="#1A237E"
+        />
+      );
+    case "cape":
+      return (
+        <Rect
+          x={w - 4}
+          y={h * 0.3}
+          width={10}
+          height={h * 0.5}
+          rx={3}
+          fill="#8B0000"
+          stroke="#B22222"
+          strokeWidth={1}
+          opacity={0.7}
+        />
+      );
+    case "rainbow":
+      // Rainbow aura is handled separately above
+      return null;
+    default:
+      return null;
+  }
+};
+
+// ============= Fallback View-based rendering =============
+
+const ViewBasedCatBody: React.FC<CatBodyProps> = ({ cat, cameraY }) => {
+  const shape = CAT_SHAPES.find((s) => s.id === cat.shapeId);
+  const skin = CAT_SKINS.find((s) => s.id === cat.skinId);
+  if (!shape || !skin) return null;
+
+  const stage = EVOLUTION_STAGE[cat.shapeId] ?? 0;
+  const w = shape.width;
+  const h = shape.height;
   const eyeSize = 6 + stage * 0.8;
   const eyeGap = 4 + stage * 0.5;
-
-  // Border width increases slightly with stage
   const borderWidth = 2 + Math.floor(stage / 3);
   const borderColor = STAGE_BORDER_COLORS[stage] || "#00000020";
 
@@ -81,16 +411,6 @@ export const CatBody: React.FC<CatBodyProps> = React.memo(({ cat, cameraY }) => 
         },
       ]}
     >
-      {/* Rainbow Aura for Stage 10 (chunky) */}
-      {stage === 9 && <RainbowAura width={w} height={h} />}
-
-      {/* Halo for Stage 7 (curled) */}
-      {stage === 6 && <Halo width={w} />}
-
-      {/* Crown for Stage 6 (triangle - おすわりネコ) */}
-      {stage === 5 && <Crown width={w} />}
-
-      {/* Body */}
       <View
         style={[
           styles.body,
@@ -104,35 +424,6 @@ export const CatBody: React.FC<CatBodyProps> = React.memo(({ cat, cameraY }) => 
           },
         ]}
       >
-        {/* Ears - scale with stage */}
-        <View
-          style={[
-            styles.earLeft,
-            {
-              borderBottomColor: skin.earColor,
-              borderLeftWidth: 6 + stage * 0.5,
-              borderRightWidth: 6 + stage * 0.5,
-              borderBottomWidth: 10 + stage * 1,
-              top: -(6 + stage * 0.5),
-            },
-          ]}
-        />
-        <View
-          style={[
-            styles.earRight,
-            {
-              borderBottomColor: skin.earColor,
-              borderLeftWidth: 6 + stage * 0.5,
-              borderRightWidth: 6 + stage * 0.5,
-              borderBottomWidth: 10 + stage * 1,
-              top: -(6 + stage * 0.5),
-            },
-          ]}
-        />
-
-        {/* Cape for Stage 9 (マント) */}
-        {stage === 8 && <Cape width={w} height={h} />}
-
         {/* Face */}
         <View style={[styles.face, { gap: eyeGap }]}>
           <View
@@ -145,22 +436,7 @@ export const CatBody: React.FC<CatBodyProps> = React.memo(({ cat, cameraY }) => 
                 backgroundColor: skin.eyeColor,
               },
             ]}
-          >
-            {/* Eye sparkle for stage >= 4 */}
-            {stage >= 4 && (
-              <View
-                style={{
-                  position: "absolute",
-                  top: 1,
-                  right: 1,
-                  width: eyeSize * 0.3,
-                  height: eyeSize * 0.3,
-                  borderRadius: eyeSize * 0.15,
-                  backgroundColor: "#FFFFFF",
-                }}
-              />
-            )}
-          </View>
+          />
           <View
             style={[
               styles.nose,
@@ -181,330 +457,17 @@ export const CatBody: React.FC<CatBodyProps> = React.memo(({ cat, cameraY }) => 
                 backgroundColor: skin.eyeColor,
               },
             ]}
-          >
-            {stage >= 4 && (
-              <View
-                style={{
-                  position: "absolute",
-                  top: 1,
-                  right: 1,
-                  width: eyeSize * 0.3,
-                  height: eyeSize * 0.3,
-                  borderRadius: eyeSize * 0.15,
-                  backgroundColor: "#FFFFFF",
-                }}
-              />
-            )}
-          </View>
-        </View>
-
-        {/* Mouth for stage >= 3 */}
-        {stage >= 3 && (
-          <View
-            style={{
-              width: 6 + stage * 0.5,
-              height: 3,
-              borderBottomLeftRadius: 4,
-              borderBottomRightRadius: 4,
-              borderBottomWidth: 1.5,
-              borderLeftWidth: 0.5,
-              borderRightWidth: 0.5,
-              borderColor: skin.noseColor,
-              marginTop: 1,
-            }}
           />
-        )}
-
-        {/* Whiskers for stage >= 2 */}
-        {stage >= 2 && <Whiskers stage={stage} />}
-
-        {/* Accessory: Ribbon (Stage 3) */}
-        {stage === 2 && <Ribbon />}
-
-        {/* Accessory: Bell (Stage 4) */}
-        {stage === 3 && <Bell />}
-
-        {/* Accessory: Scarf (Stage 5) */}
-        {stage === 4 && <Scarf width={w} />}
-
-        {/* Accessory: Bowtie (Stage 8) */}
-        {stage === 7 && <Bowtie />}
-
-        {/* Expression overlay */}
+        </View>
         <View style={styles.expressionContainer}>
           <ExpressionIndicator expression={cat.expression} stage={stage} />
         </View>
       </View>
     </View>
   );
-});
-
-// ============= Accessories =============
-
-const RainbowAura: React.FC<{ width: number; height: number }> = ({ width, height }) => (
-  <View
-    style={{
-      position: "absolute",
-      left: -8,
-      top: -8,
-      width: width + 16,
-      height: height + 16,
-      borderRadius: (width + 16) / 3,
-      borderWidth: 3,
-      borderColor: "rgba(255,215,0,0.6)",
-      backgroundColor: "rgba(255,255,200,0.15)",
-      zIndex: -1,
-    }}
-  >
-    {/* Sparkle dots */}
-    <View style={{ position: "absolute", top: -4, left: width * 0.3, width: 5, height: 5, borderRadius: 2.5, backgroundColor: "#FFD700" }} />
-    <View style={{ position: "absolute", top: height * 0.2, right: -4, width: 4, height: 4, borderRadius: 2, backgroundColor: "#FF69B4" }} />
-    <View style={{ position: "absolute", bottom: -3, left: width * 0.5, width: 4, height: 4, borderRadius: 2, backgroundColor: "#87CEEB" }} />
-    <View style={{ position: "absolute", top: height * 0.5, left: -4, width: 3, height: 3, borderRadius: 1.5, backgroundColor: "#98FB98" }} />
-  </View>
-);
-
-const Halo: React.FC<{ width: number }> = ({ width }) => (
-  <View
-    style={{
-      position: "absolute",
-      top: -14,
-      alignSelf: "center",
-      width: width * 0.5,
-      height: 8,
-      borderRadius: 4,
-      borderWidth: 2,
-      borderColor: "#FFD700",
-      backgroundColor: "rgba(255,215,0,0.3)",
-      zIndex: 5,
-      left: width * 0.25,
-    }}
-  />
-);
-
-const Crown: React.FC<{ width: number }> = ({ width }) => (
-  <View
-    style={{
-      position: "absolute",
-      top: -16,
-      left: width * 0.2,
-      width: width * 0.6,
-      height: 14,
-      flexDirection: "row",
-      justifyContent: "center",
-      alignItems: "flex-end",
-      zIndex: 5,
-    }}
-  >
-    <View style={crownStyles.point} />
-    <View style={[crownStyles.point, { height: 12 }]} />
-    <View style={crownStyles.point} />
-    <View
-      style={{
-        position: "absolute",
-        bottom: 0,
-        width: "100%",
-        height: 4,
-        backgroundColor: "#FFD700",
-        borderRadius: 1,
-      }}
-    />
-  </View>
-);
-
-const crownStyles = StyleSheet.create({
-  point: {
-    width: 0,
-    height: 9,
-    borderLeftWidth: 4,
-    borderRightWidth: 4,
-    borderBottomWidth: 8,
-    borderLeftColor: "transparent",
-    borderRightColor: "transparent",
-    borderBottomColor: "#FFD700",
-    marginHorizontal: 1,
-  },
-});
-
-const Ribbon: React.FC = () => (
-  <View
-    style={{
-      position: "absolute",
-      bottom: 6,
-      left: 6,
-      width: 8,
-      height: 8,
-      borderRadius: 4,
-      backgroundColor: "#FF69B4",
-      borderWidth: 1,
-      borderColor: "#FF1493",
-    }}
-  />
-);
-
-const Bell: React.FC = () => (
-  <View
-    style={{
-      position: "absolute",
-      bottom: 4,
-      alignSelf: "center",
-      width: 10,
-      height: 10,
-      borderRadius: 5,
-      backgroundColor: "#FFD700",
-      borderWidth: 1,
-      borderColor: "#DAA520",
-    }}
-  >
-    <View
-      style={{
-        position: "absolute",
-        bottom: 1,
-        alignSelf: "center",
-        width: 3,
-        height: 3,
-        borderRadius: 1.5,
-        backgroundColor: "#B8860B",
-      }}
-    />
-  </View>
-);
-
-const Scarf: React.FC<{ width: number }> = ({ width }) => (
-  <View
-    style={{
-      position: "absolute",
-      bottom: 2,
-      left: 0,
-      right: 0,
-      height: 6,
-      backgroundColor: "#E74C3C",
-      borderRadius: 3,
-      opacity: 0.8,
-    }}
-  />
-);
-
-const Bowtie: React.FC = () => (
-  <View
-    style={{
-      position: "absolute",
-      bottom: 4,
-      alignSelf: "center",
-      flexDirection: "row",
-      alignItems: "center",
-    }}
-  >
-    {/* Left wing */}
-    <View
-      style={{
-        width: 0,
-        height: 0,
-        borderTopWidth: 4,
-        borderBottomWidth: 4,
-        borderRightWidth: 5,
-        borderTopColor: "transparent",
-        borderBottomColor: "transparent",
-        borderRightColor: "#1A237E",
-      }}
-    />
-    {/* Center knot */}
-    <View
-      style={{
-        width: 4,
-        height: 4,
-        borderRadius: 2,
-        backgroundColor: "#283593",
-      }}
-    />
-    {/* Right wing */}
-    <View
-      style={{
-        width: 0,
-        height: 0,
-        borderTopWidth: 4,
-        borderBottomWidth: 4,
-        borderLeftWidth: 5,
-        borderTopColor: "transparent",
-        borderBottomColor: "transparent",
-        borderLeftColor: "#1A237E",
-      }}
-    />
-  </View>
-);
-
-const Cape: React.FC<{ width: number; height: number }> = ({ width, height }) => (
-  <View
-    style={{
-      position: "absolute",
-      bottom: 0,
-      right: -6,
-      width: 14,
-      height: height * 0.6,
-      backgroundColor: "#8B0000",
-      borderRadius: 4,
-      borderWidth: 1,
-      borderColor: "#B22222",
-      opacity: 0.7,
-      zIndex: -1,
-    }}
-  />
-);
-
-const Whiskers: React.FC<{ stage: number }> = ({ stage }) => {
-  const len = 6 + stage * 0.5;
-  const color = "rgba(0,0,0,0.2)";
-  return (
-    <>
-      {/* Left whiskers */}
-      <View
-        style={{
-          position: "absolute",
-          left: 2,
-          top: "48%",
-          width: len,
-          height: 1,
-          backgroundColor: color,
-          transform: [{ rotate: "-15deg" }],
-        }}
-      />
-      <View
-        style={{
-          position: "absolute",
-          left: 2,
-          top: "55%",
-          width: len,
-          height: 1,
-          backgroundColor: color,
-          transform: [{ rotate: "15deg" }],
-        }}
-      />
-      {/* Right whiskers */}
-      <View
-        style={{
-          position: "absolute",
-          right: 2,
-          top: "48%",
-          width: len,
-          height: 1,
-          backgroundColor: color,
-          transform: [{ rotate: "15deg" }],
-        }}
-      />
-      <View
-        style={{
-          position: "absolute",
-          right: 2,
-          top: "55%",
-          width: len,
-          height: 1,
-          backgroundColor: color,
-          transform: [{ rotate: "-15deg" }],
-        }}
-      />
-    </>
-  );
 };
+
+// ============= Expression =============
 
 const ExpressionIndicator: React.FC<{ expression: FaceExpression; stage: number }> = ({ expression, stage }) => {
   const marks: Record<FaceExpression, string> = {
@@ -519,7 +482,6 @@ const ExpressionIndicator: React.FC<{ expression: FaceExpression; stage: number 
   const mark = marks[expression];
   if (!mark) return null;
 
-  // Larger expression text for higher stage cats
   const fontSize = 8 + Math.min(stage, 5) * 1;
 
   return (
@@ -537,32 +499,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     overflow: "visible",
-  },
-  earLeft: {
-    position: "absolute",
-    top: -8,
-    left: 8,
-    width: 0,
-    height: 0,
-    borderLeftWidth: 8,
-    borderRightWidth: 8,
-    borderBottomWidth: 14,
-    borderLeftColor: "transparent",
-    borderRightColor: "transparent",
-    borderBottomColor: "#FFBCBC",
-  },
-  earRight: {
-    position: "absolute",
-    top: -8,
-    right: 8,
-    width: 0,
-    height: 0,
-    borderLeftWidth: 8,
-    borderRightWidth: 8,
-    borderBottomWidth: 14,
-    borderLeftColor: "transparent",
-    borderRightColor: "transparent",
-    borderBottomColor: "#FFBCBC",
   },
   face: {
     flexDirection: "row",
