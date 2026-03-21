@@ -134,11 +134,14 @@ export async function generateShareImage(params: {
       ctx.fillText(`最高進化: ${evolutionName}`, 990, 450);
     }
 
-    // Hashtags
-    ctx.fillStyle = "rgba(255,255,255,0.5)";
-    ctx.font = "26px sans-serif";
+    // URL and Hashtags
+    ctx.fillStyle = "rgba(255,255,255,0.6)";
+    ctx.font = "22px sans-serif";
     ctx.textAlign = "center";
-    ctx.fillText("#\u3064\u307F\u30CD\u30B3 #\u30CD\u30B3 #StackCats #\u30D1\u30BA\u30EB\u30B2\u30FC\u30E0", 600, H - 30);
+    ctx.fillText("https://tsumi-neko.vercel.app", 600, H - 55);
+    ctx.font = "20px sans-serif";
+    ctx.fillStyle = "rgba(255,255,255,0.5)";
+    ctx.fillText("#つみネコ #ネコ #StackCats #パズルゲーム", 600, H - 25);
 
     return canvas.toDataURL("image/png");
   } catch {
@@ -173,6 +176,17 @@ function safeRoundRect(
   ctx.closePath();
 }
 
+const GAME_URL = "https://tsumi-neko.vercel.app";
+
+const RANK_TITLES: [number, string][] = [
+  [10000, "🏆ネコタワー伝説"],
+  [5000,  "👑ずんぐりマスター"],
+  [3000,  "🌟ネコ積み名人"],
+  [1500,  "🔥コンボマニア"],
+  [500,   "😺ネコ積みビギナー"],
+  [0,     "🐱ちびネコ見習い"],
+];
+
 export async function shareResult(params: {
   score: number;
   height: number;
@@ -187,14 +201,16 @@ export async function shareResult(params: {
 
   const recordMark = isNewRecord ? "NEW RECORD! " : "";
   const emojiGrid = generateEmojiGrid(shapesUsed, mergeCount, catCount);
+  const rankTitle = (RANK_TITLES.find(([threshold]) => score >= threshold) ?? RANK_TITLES[RANK_TITLES.length - 1])[1];
   const text = [
-    `\u3010\u3064\u307F\u30CD\u30B3\uD83D\uDC31\u3011${catCount}\u5339\u7A4D\u3093\u3060\uFF01\u6700\u9AD8\u30E9\u30F3\u30AF: ${maxEvolution || "?"}!`,
-    `${recordMark}\u9AD8\u3055: ${height.toFixed(1)}m | \u30B9\u30B3\u30A2: ${score.toLocaleString()}`,
+    `【つみネコ🐱】${rankTitle} | ${catCount}匹 | ${height.toFixed(1)}m`,
+    `${recordMark}スコア: ${score.toLocaleString()}`,
     "",
     emojiGrid,
     "",
-    "\u3064\u307F\u30CD\u30B3 - \u30CD\u30B3\u3092\u7A4D\u307F\u4E0A\u3052\u3066\u5408\u4F53\u3055\u305B\u3088\u3046!",
-    "#\u3064\u307F\u30CD\u30B3 #StackCats",
+    "つみネコ - ネコを積み上げて合体させよう!",
+    GAME_URL,
+    "#つみネコ #ネコ #StackCats #パズルゲーム",
   ].filter(Boolean).join("\n");
 
   // Try to generate and share image on web

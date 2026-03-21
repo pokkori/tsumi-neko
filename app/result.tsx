@@ -27,6 +27,7 @@ export default function ResultScreen() {
     isDaily: string;
     mergeCount: string;
     shapesUsed: string;
+    coinsEarned: string;
   }>();
 
   const score = parseInt(params.score || "0", 10);
@@ -36,6 +37,7 @@ export default function ResultScreen() {
   const isNewRecord = params.isNewRecord === "true";
   const isDaily = params.isDaily === "true";
   const mergeCount = parseInt(params.mergeCount || "0", 10);
+  const coinsEarned = parseInt(params.coinsEarned || "0", 10);
   const shapesUsed: CatShapeId[] = params.shapesUsed
     ? (params.shapesUsed.split(",").filter(Boolean) as CatShapeId[])
     : [];
@@ -107,8 +109,8 @@ export default function ResultScreen() {
     if (evolutionBadge) {
       Animated.loop(
         Animated.sequence([
-          Animated.timing(badgePulseAnim, { toValue: 1.08, duration: 700, useNativeDriver: true }),
-          Animated.timing(badgePulseAnim, { toValue: 1.0, duration: 700, useNativeDriver: true }),
+          Animated.timing(badgePulseAnim, { toValue: 1.12, duration: 600, useNativeDriver: true }),
+          Animated.timing(badgePulseAnim, { toValue: 1.0, duration: 800, useNativeDriver: true }),
         ])
       ).start();
     }
@@ -174,6 +176,12 @@ export default function ResultScreen() {
               </Text>
             </View>
           )}
+          {coinsEarned > 0 && (
+            <View style={styles.scoreRow}>
+              <Text style={styles.scoreLabel}>獲得コイン</Text>
+              <Text style={[styles.scoreValue, { color: "#FFD700" }]}>🪙 +{coinsEarned}</Text>
+            </View>
+          )}
         </View>
 
         {evolutionBadge && (
@@ -182,8 +190,13 @@ export default function ResultScreen() {
             borderRadius: 8,
             padding: 8,
             marginTop: 8,
-            borderWidth: 1.5,
+            borderWidth: 2,
             borderColor: '#FFD700',
+            shadowColor: '#FFD700',
+            shadowOffset: { width: 0, height: 0 },
+            shadowOpacity: 0.6,
+            shadowRadius: 8,
+            elevation: 6,
             transform: [{ scale: badgePulseAnim }],
           }}>
             <Text style={{ color: '#FFD700', fontSize: 18, fontWeight: 'bold', textAlign: 'center' }}>

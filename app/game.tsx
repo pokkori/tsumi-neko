@@ -30,6 +30,9 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const TUTORIAL_KEY = "@tsumineko/tutorial_seen";
 
+const EVOLUTION_ORDER = ["tiny","round","long","flat","loaf","triangle","curled","fat","stretchy","chunky"];
+const CHUNKY_INDEX = EVOLUTION_ORDER.length - 1; // 9
+
 export default function GameScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ daily?: string }>();
@@ -122,6 +125,8 @@ export default function GameScreen() {
       if (isDaily) {
         recordAttempt(finalState.score);
       }
+      const coinsEarned = Math.floor(finalState.score / 100) + (finalState.mergeCount ?? 0) * 2;
+      useGameStore.getState().addCoins(coinsEarned);
       const timeout = setTimeout(() => {
         router.replace({
           pathname: "/result",
@@ -134,6 +139,7 @@ export default function GameScreen() {
             isDaily: String(isDaily),
             mergeCount: String(finalState.mergeCount),
             shapesUsed: finalState.shapesUsedInGame.join(","),
+            coinsEarned: String(coinsEarned),
           },
         });
       }, 500);
@@ -217,6 +223,31 @@ export default function GameScreen() {
                 { top: PHYSICS.GROUND_Y + gameState.cameraY },
               ]}
             />
+
+            {/* Evolution Countdown */}
+            {(() => {
+              const maxCurrentStage = (gameState.stackedCats ?? []).reduce((max: number, cat: any) => {
+                const idx = EVOLUTION_ORDER.indexOf(cat.shapeId ?? "");
+                return idx > max ? idx : max;
+              }, -1);
+              const remainingMerges = maxCurrentStage >= 0 ? CHUNKY_INDEX - maxCurrentStage : CHUNKY_INDEX;
+              return remainingMerges <= 3 && remainingMerges > 0 ? (
+                <View style={{
+                  position: "absolute",
+                  bottom: 90,
+                  alignSelf: "center",
+                  backgroundColor: "rgba(255,215,0,0.9)",
+                  paddingHorizontal: 16,
+                  paddingVertical: 6,
+                  borderRadius: 20,
+                  zIndex: 15,
+                }}>
+                  <Text style={{ fontSize: 14, fontWeight: "bold", color: "#333" }}>
+                    👑 あと{remainingMerges}回で ずんぐりネコ！
+                  </Text>
+                </View>
+              ) : null;
+            })()}
 
             {/* Combo Popup */}
             <ComboPopup combo={gameState.combo} />
