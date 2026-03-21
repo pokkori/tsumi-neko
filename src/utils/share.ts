@@ -81,7 +81,7 @@ export async function generateShareImage(params: {
 
     // Score card background
     ctx.fillStyle = "rgba(255,255,255,0.15)";
-    roundRect(ctx, 100, 160, 500, 380, 20);
+    safeRoundRect(ctx, 100, 160, 500, 380, 20);
     ctx.fill();
 
     // Score details
@@ -122,7 +122,7 @@ export async function generateShareImage(params: {
       // Evolution stage badge
       ctx.fillStyle = 'rgba(255,255,255,0.12)';
       ctx.beginPath();
-      ctx.roundRect(820, 160, 340, 340, 20);
+      safeRoundRect(ctx, 820, 160, 340, 340, 20);
       ctx.fill();
       // Cat emoji (large)
       ctx.font = '160px sans-serif';
@@ -146,8 +146,8 @@ export async function generateShareImage(params: {
   }
 }
 
-/** Helper to draw rounded rectangle */
-function roundRect(
+/** ブラウザ互換 rounded rectangle（roundRect非対応環境でもクラッシュしない） */
+function safeRoundRect(
   ctx: CanvasRenderingContext2D,
   x: number,
   y: number,
@@ -155,6 +155,11 @@ function roundRect(
   h: number,
   r: number,
 ) {
+  if (typeof (ctx as any).roundRect === 'function') {
+    (ctx as any).roundRect(x, y, w, h, r);
+    return;
+  }
+  // フォールバック: quadraticCurveTo で角丸を描画
   ctx.beginPath();
   ctx.moveTo(x + r, y);
   ctx.lineTo(x + w - r, y);

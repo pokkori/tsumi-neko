@@ -107,6 +107,8 @@ export default function ResultScreen() {
 
   // Generate emoji preview for display
   const emojiPreview = generateEmojiGrid(shapesUsed, mergeCount, catCount);
+  // 今回解禁された最高進化ランクのバッジ表示
+  const evolutionBadge = maxEvolution ? `最高進化 ${maxEvolution} 解禁！` : null;
 
   return (
     <SafeAreaView style={styles.container}>
@@ -162,6 +164,14 @@ export default function ResultScreen() {
             </View>
           )}
         </View>
+
+        {evolutionBadge && (
+          <View style={{ backgroundColor: 'rgba(255,215,0,0.15)', borderRadius: 8, padding: 8, marginTop: 8, borderWidth: 1, borderColor: 'rgba(255,215,0,0.4)' }}>
+            <Text style={{ color: '#FFD700', fontSize: 16, fontWeight: 'bold', textAlign: 'center' }}>
+              {'🌟'} {evolutionBadge}
+            </Text>
+          </View>
+        )}
 
         {/* Streak Display */}
         {currentStreak >= 2 && (
