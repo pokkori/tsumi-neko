@@ -1,6 +1,6 @@
 import { Platform, Share } from "react-native";
 import { CatShapeId } from "../types";
-import { CAT_EMOJI } from "../data/catShapes";
+import { CAT_EMOJI, CAT_SHAPES } from "../data/catShapes";
 
 export function generateEmojiGrid(
   shapesUsed: CatShapeId[],
@@ -51,29 +51,32 @@ export async function generateShareImage(params: {
   try {
     // Create an offscreen canvas for the OGP image
     const canvas = document.createElement("canvas");
-    canvas.width = 1200;
-    canvas.height = 630;
+    const W = 1200;
+    const H = 630;
+    canvas.width = W;
+    canvas.height = H;
     const ctx = canvas.getContext("2d");
     if (!ctx) return null;
 
     // Background gradient
-    const gradient = ctx.createLinearGradient(0, 0, 0, 630);
+    const gradient = ctx.createLinearGradient(0, 0, 0, H);
     gradient.addColorStop(0, "#87CEEB");
     gradient.addColorStop(1, "#1A1A2E");
     ctx.fillStyle = gradient;
-    ctx.fillRect(0, 0, 1200, 630);
+    ctx.fillRect(0, 0, W, H);
 
     // Title
     ctx.fillStyle = "#FFFFFF";
     ctx.font = "bold 48px sans-serif";
-    ctx.textAlign = "center";
-    ctx.fillText("\u3064\u307F\u30CD\u30B3 - Stack Cats!", 600, 80);
+    ctx.textAlign = "left";
+    ctx.fillText("\u3064\u307F\u30CD\u30B3 - Stack Cats!", 80, 80);
 
     // New Record banner
     if (params.isNewRecord) {
       ctx.fillStyle = "#FFD700";
       ctx.font = "bold 36px sans-serif";
-      ctx.fillText("NEW RECORD!", 600, 130);
+      ctx.textAlign = "left";
+      ctx.fillText("NEW RECORD!", 80, 130);
     }
 
     // Score card background
@@ -101,38 +104,41 @@ export async function generateShareImage(params: {
     for (const [label, value] of labels) {
       ctx.fillStyle = "rgba(255,255,255,0.7)";
       ctx.font = "22px sans-serif";
+      ctx.textAlign = "left";
       ctx.fillText(label, 140, y);
 
       ctx.fillStyle = "#FFFFFF";
       ctx.font = "bold 28px sans-serif";
+      ctx.textAlign = "left";
       ctx.fillText(value, 420, y);
 
       y += 55;
     }
 
-    // Cat tower illustration (right side)
-    const emojiList = params.shapesUsed.map((s) => CAT_EMOJI[s] || "\u{1F431}");
-    ctx.textAlign = "center";
-    ctx.font = "48px sans-serif";
-    const towerX = 850;
-    let towerY = 500;
-    const catsToDraw = Math.min(params.catCount, 8);
-    for (let i = 0; i < catsToDraw; i++) {
-      const emoji = emojiList[i % emojiList.length];
-      ctx.fillText(emoji, towerX + (i % 2 === 0 ? 0 : 30), towerY);
-      towerY -= 50;
-    }
-    // Max evolution emoji on top of tower
+    // Highest evolution cat drawing (右側に大きく表示)
     if (params.maxEvolution) {
-      ctx.font = "72px serif";
-      ctx.fillText(params.maxEvolution, towerX, towerY - 10);
+      const catEmoji = CAT_EMOJI[params.maxEvolution as CatShapeId] ?? '🐱';
+      const evolutionName = CAT_SHAPES.find(c => c.id === params.maxEvolution)?.name ?? params.maxEvolution;
+      // Evolution stage badge
+      ctx.fillStyle = 'rgba(255,255,255,0.12)';
+      ctx.beginPath();
+      ctx.roundRect(820, 160, 340, 340, 20);
+      ctx.fill();
+      // Cat emoji (large)
+      ctx.font = '160px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(catEmoji, 990, 370);
+      // Evolution name
+      ctx.fillStyle = '#FFD700';
+      ctx.font = 'bold 28px sans-serif';
+      ctx.fillText(`最高進化: ${evolutionName}`, 990, 450);
     }
 
-    // Hashtag
+    // Hashtags
     ctx.fillStyle = "rgba(255,255,255,0.5)";
-    ctx.font = "18px sans-serif";
+    ctx.font = "26px sans-serif";
     ctx.textAlign = "center";
-    ctx.fillText("#\u3064\u307F\u30CD\u30B3 #StackCats", 600, 610);
+    ctx.fillText("#\u3064\u307F\u30CD\u30B3 #\u30CD\u30B3 #StackCats #\u30D1\u30BA\u30EB\u30B2\u30FC\u30E0", 600, H - 30);
 
     return canvas.toDataURL("image/png");
   } catch {

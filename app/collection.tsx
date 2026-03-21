@@ -176,8 +176,23 @@ export default function CollectionScreen() {
       </View>
 
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
-        {/* Evolution Chain */}
+        {/* Evolution Chain - 横スクロール進化チェーン可視化 */}
         <Text style={styles.sectionTitle}>進化チェーン</Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chainScroll}>
+          <View style={styles.chainRow}>
+            {EVOLUTION_ORDER.map((shapeId, idx) => (
+              <React.Fragment key={shapeId}>
+                <View style={styles.chainCell}>
+                  <CatMiniPreview shapeId={shapeId} unlocked={achievements.shapesUsed.includes(shapeId)} />
+                  <Text style={styles.chainName}>{CAT_SHAPES.find(c=>c.id===shapeId)?.name ?? shapeId}</Text>
+                </View>
+                {idx < EVOLUTION_ORDER.length - 1 && (
+                  <Text style={styles.arrow}>→</Text>
+                )}
+              </React.Fragment>
+            ))}
+          </View>
+        </ScrollView>
         <Text style={styles.sectionSubtitle}>
           発見率: {shapesUsedCount}/{EVOLUTION_ORDER.length}
         </Text>
@@ -331,6 +346,11 @@ const styles = StyleSheet.create({
     color: COLORS.textLight,
     marginBottom: 12,
   },
+  chainScroll: { marginVertical: 12 },
+  chainRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16 },
+  chainCell: { alignItems: 'center', width: 70 },
+  chainName: { fontSize: 10, color: COLORS.text, textAlign: 'center', marginTop: 4 },
+  arrow: { color: COLORS.textLight, fontSize: 20, marginHorizontal: 4 },
   // Evolution chain: horizontal scroll with arrows
   evolutionChain: {
     flexDirection: "row",
