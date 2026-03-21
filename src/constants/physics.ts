@@ -23,8 +23,8 @@ export const PHYSICS = {
     right: 500,
     bottom: 900,
   },
-  COLLAPSE_SLOW_FACTOR: 0.15,
-  COLLAPSE_SLOW_DURATION: 1500,
+  COLLAPSE_SLOW_FACTOR: 0.3,
+  COLLAPSE_SLOW_DURATION: 500,
   CAMERA_LERP: 0.08,
   CAMERA_MIN_Y: 0,
 } as const;

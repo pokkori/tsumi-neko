@@ -44,6 +44,7 @@ export async function generateShareImage(params: {
   mergeCount: number;
   isNewRecord: boolean;
   shapesUsed: CatShapeId[];
+  maxEvolution?: string;
 }): Promise<string | null> {
   if (Platform.OS !== "web") return null;
 
@@ -85,13 +86,16 @@ export async function generateShareImage(params: {
     ctx.textAlign = "left";
     ctx.font = "24px sans-serif";
 
-    const labels = [
+    const labels: [string, string][] = [
       ["Score", params.score.toLocaleString()],
       ["Height", `${params.height.toFixed(1)}m`],
       ["Cats", `${params.catCount}`],
       ["Max Combo", `x${params.maxCombo}`],
       ["Merges", `x${params.mergeCount}`],
     ];
+    if (params.maxEvolution) {
+      labels.push(["最高進化", params.maxEvolution]);
+    }
 
     let y = 220;
     for (const [label, value] of labels) {
@@ -103,7 +107,7 @@ export async function generateShareImage(params: {
       ctx.font = "bold 28px sans-serif";
       ctx.fillText(value, 420, y);
 
-      y += 60;
+      y += 55;
     }
 
     // Cat tower illustration (right side)
@@ -117,6 +121,11 @@ export async function generateShareImage(params: {
       const emoji = emojiList[i % emojiList.length];
       ctx.fillText(emoji, towerX + (i % 2 === 0 ? 0 : 30), towerY);
       towerY -= 50;
+    }
+    // Max evolution emoji on top of tower
+    if (params.maxEvolution) {
+      ctx.font = "72px serif";
+      ctx.fillText(params.maxEvolution, towerX, towerY - 10);
     }
 
     // Hashtag
@@ -187,6 +196,7 @@ export async function shareResult(params: {
       mergeCount,
       isNewRecord,
       shapesUsed,
+      maxEvolution,
     });
 
     if (imageDataUrl) {

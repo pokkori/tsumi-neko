@@ -3,6 +3,8 @@
     "name": "tsumi-neko",
     "slug": "tsumi-neko",
     "version": "1.0.0",
+    "description": "つみネコ - 猫を積み上げて進化させよう！物理演算で積み上がる猫タワーゲーム。猫を合体させてレアな猫に進化！どこまで高く積めるか挑戦！キーワード: 猫ゲーム スタッキング 物理ゲーム 積み上げ ネコゲーム",
+    "keywords": ["つみネコ", "猫ゲーム", "スタッキング", "物理ゲーム", "StackCats"],
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",

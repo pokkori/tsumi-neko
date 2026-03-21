@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -10,8 +10,10 @@ import {
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { formatScore, formatHeight } from "../src/utils/format";
 import { shareResult, generateEmojiGrid } from "../src/utils/share";
+import { loadData } from "../src/utils/storage";
 import { COLORS } from "../src/constants/colors";
 import { CatShapeId } from "../src/types";
+import { CAT_EMOJI, CAT_SHAPES } from "../src/data/catShapes";
 
 export default function ResultScreen() {
   const router = useRouter();
@@ -37,8 +39,16 @@ export default function ResultScreen() {
     ? (params.shapesUsed.split(",").filter(Boolean) as CatShapeId[])
     : [];
 
+  const [currentStreak, setCurrentStreak] = useState<number>(0);
+
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(0.8)).current;
+
+  useEffect(() => {
+    loadData("@tsumineko/stats").then((stats) => {
+      setCurrentStreak(stats.currentStreak);
+    });
+  }, []);
 
   useEffect(() => {
     Animated.parallel([
@@ -55,8 +65,24 @@ export default function ResultScreen() {
     ]).start();
   }, []);
 
+  // Calculate max evolution from shapesUsed (highest index in evolution chain)
+  const maxEvolution: string = (() => {
+    if (shapesUsed.length === 0) return "";
+    const evolutionOrder = CAT_SHAPES.map((s) => s.id);
+    let maxIndex = -1;
+    let maxShapeId: CatShapeId | null = null;
+    for (const shapeId of shapesUsed) {
+      const idx = evolutionOrder.indexOf(shapeId);
+      if (idx > maxIndex) {
+        maxIndex = idx;
+        maxShapeId = shapeId;
+      }
+    }
+    return maxShapeId ? (CAT_EMOJI[maxShapeId] || "") : "";
+  })();
+
   const handleShare = () => {
-    shareResult({ score, height, catCount, isNewRecord, mergeCount, shapesUsed, maxCombo });
+    shareResult({ score, height, catCount, isNewRecord, mergeCount, shapesUsed, maxCombo, maxEvolution });
   };
 
   // Generate emoji preview for display
@@ -108,6 +134,15 @@ export default function ResultScreen() {
             </View>
           )}
         </View>
+
+        {/* Streak Display */}
+        {currentStreak >= 2 && (
+          <View style={styles.streakBanner}>
+            <Text style={styles.streakText}>
+              🔥 {currentStreak}日連続プレイ中！
+            </Text>
+          </View>
+        )}
 
         {/* Emoji Grid Preview */}
         {emojiPreview ? (
@@ -200,6 +235,21 @@ const styles = StyleSheet.create({
   },
   mergeValue: {
     color: "#FFD700",
+  },
+  streakBanner: {
+    backgroundColor: "rgba(255, 165, 0, 0.2)",
+    borderRadius: 12,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: "rgba(255, 165, 0, 0.5)",
+  },
+  streakText: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#FFA500",
+    textAlign: "center",
   },
   emojiCard: {
     backgroundColor: "rgba(255,255,255,0.08)",
