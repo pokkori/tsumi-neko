@@ -161,22 +161,21 @@ export async function shareResult(params: {
   mergeCount?: number;
   shapesUsed?: CatShapeId[];
   maxCombo?: number;
+  maxEvolution?: string;
 }): Promise<void> {
-  const { score, height, catCount, isNewRecord, mergeCount = 0, shapesUsed = [], maxCombo = 0 } = params;
+  const { score, height, catCount, isNewRecord, mergeCount = 0, shapesUsed = [], maxCombo = 0, maxEvolution = "" } = params;
 
   const recordMark = isNewRecord ? "NEW RECORD! " : "";
   const emojiGrid = generateEmojiGrid(shapesUsed, mergeCount, catCount);
-
   const text = [
-    `${recordMark}\u30CD\u30B3\u3092${catCount}\u5339\u7A4D\u307F\u4E0A\u3052\u305F!`,
-    `\u9AD8\u3055: ${height.toFixed(1)}m`,
-    `\u30B9\u30B3\u30A2: ${score.toLocaleString()}`,
+    `\u3010\u3064\u307F\u30CD\u30B3\uD83D\uDC31\u3011${catCount}\u5339\u7A4D\u3093\u3060\uFF01\u6700\u9AD8\u30E9\u30F3\u30AF: ${maxEvolution || "?"}!`,
+    `${recordMark}\u9AD8\u3055: ${height.toFixed(1)}m | \u30B9\u30B3\u30A2: ${score.toLocaleString()}`,
     "",
     emojiGrid,
     "",
     "\u3064\u307F\u30CD\u30B3 - \u30CD\u30B3\u3092\u7A4D\u307F\u4E0A\u3052\u3066\u5408\u4F53\u3055\u305B\u3088\u3046!",
     "#\u3064\u307F\u30CD\u30B3 #StackCats",
-  ].join("\n");
+  ].filter(Boolean).join("\n");
 
   // Try to generate and share image on web
   if (Platform.OS === "web") {

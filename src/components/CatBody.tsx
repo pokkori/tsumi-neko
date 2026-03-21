@@ -398,6 +398,20 @@ const ViewBasedCatBody: React.FC<CatBodyProps> = ({ cat, cameraY }) => {
   const borderWidth = 2 + Math.floor(stage / 3);
   const borderColor = STAGE_BORDER_COLORS[stage] || "#00000020";
 
+  // Tier-based borderRadius coefficients (設計書R5仕様)
+  const tier = stage + 1; // tier1=stage0 ... tier10=stage9
+  const borderRadiusCoeff =
+    tier <= 1 ? 0.5 :
+    tier === 2 ? 0.45 :
+    tier === 3 ? 0.4 :
+    tier === 4 ? 0.35 :
+    0.3;
+  const bodyBorderRadius = w * borderRadiusCoeff;
+
+  // Tier-based ear size (設計書R5仕様)
+  const earHeight = w * (0.3 + tier * 0.05);
+  const earWidth = w * (0.2 + tier * 0.03);
+
   return (
     <View
       style={[
@@ -411,13 +425,16 @@ const ViewBasedCatBody: React.FC<CatBodyProps> = ({ cat, cameraY }) => {
         },
       ]}
     >
+      {/* Ears */}
+      <View style={[styles.earLeft, { width: earWidth, height: earHeight, borderBottomLeftRadius: earWidth / 2, borderBottomRightRadius: earWidth / 2, backgroundColor: skin.bodyColor, borderColor, borderWidth: borderWidth - 1 > 0 ? borderWidth - 1 : 1 }]} />
+      <View style={[styles.earRight, { width: earWidth, height: earHeight, borderBottomLeftRadius: earWidth / 2, borderBottomRightRadius: earWidth / 2, backgroundColor: skin.bodyColor, borderColor, borderWidth: borderWidth - 1 > 0 ? borderWidth - 1 : 1 }]} />
       <View
         style={[
           styles.body,
           {
             width: w,
             height: h,
-            borderRadius: shape.id === "flat" || shape.id === "stretchy" ? h / 3 : w / 3,
+            borderRadius: bodyBorderRadius,
             backgroundColor: skin.bodyColor,
             borderWidth,
             borderColor,
@@ -526,5 +543,15 @@ const styles = StyleSheet.create({
   },
   markText: {
     fontSize: 10,
+  },
+  earLeft: {
+    position: "absolute",
+    top: -10,
+    left: 4,
+  },
+  earRight: {
+    position: "absolute",
+    top: -10,
+    right: 4,
   },
 });
