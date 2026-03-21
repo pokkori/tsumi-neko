@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import {
   View,
   Text,
@@ -12,6 +12,7 @@ import { useRouter, useLocalSearchParams } from "expo-router";
 import { useGameState } from "../src/hooks/useGameState";
 import { useGameStore } from "../src/stores/gameStore";
 import { useDailyChallenge } from "../src/hooks/useDailyChallenge";
+import { ChallengeConfig } from "../src/engine/GameLoop";
 import { CatBody } from "../src/components/CatBody";
 import { ScoreDisplay } from "../src/components/ScoreDisplay";
 import { ComboPopup } from "../src/components/ComboPopup";
@@ -36,8 +37,17 @@ export default function GameScreen() {
   const settings = useGameStore((s) => s.settings);
   const { challenge, recordAttempt } = useDailyChallenge();
 
+  // Build challenge config for daily mode
+  const challengeConfig = useMemo<ChallengeConfig | undefined>(() => {
+    if (!isDaily) return undefined;
+    return {
+      rule: challenge.rule,
+      challengeId: challenge.id,
+    };
+  }, [isDaily, challenge.rule, challenge.id]);
+
   const { gameState, isRunning, startGame, onTap, continueFromReward } =
-    useGameState(settings.selectedSkinId);
+    useGameState(settings.selectedSkinId, undefined, challengeConfig);
 
   const [paused, setPaused] = useState(false);
   const [started, setStarted] = useState(false);

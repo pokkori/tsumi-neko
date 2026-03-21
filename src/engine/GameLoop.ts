@@ -1,5 +1,5 @@
 import Matter from "matter-js";
-import { GameState, CatShapeId, SkinId, MergeEvent } from "../types";
+import { GameState, CatShapeId, SkinId, MergeEvent, ChallengeRule } from "../types";
 import { PhysicsWorld } from "./PhysicsWorld";
 import { CatSpawner } from "./CatSpawner";
 import { CollapseDetector } from "./CollapseDetector";
@@ -7,6 +7,12 @@ import { ScoreCalculator } from "./ScoreCalculator";
 import { PHYSICS } from "../constants/physics";
 import { SCREEN_WIDTH } from "../constants/layout";
 import { CAT_SHAPES, EVOLUTION_MAP } from "../data/catShapes";
+import { applyChallengeRule } from "../data/dailyChallenges";
+
+export interface ChallengeConfig {
+  rule: ChallengeRule;
+  challengeId: string;
+}
 
 export class GameLoop {
   private physics: PhysicsWorld;
@@ -20,6 +26,17 @@ export class GameLoop {
   private bodyShapeMap: Map<number, CatShapeId> = new Map();
   private pendingMerges: { bodyA: number; bodyB: number; shapeId: CatShapeId }[] = [];
 
+  // Challenge parameters (applied from daily challenge rules)
+  private challengeParams: {
+    catMassMultiplier: number;
+    catRestitutionOverride: number | null;
+    catFrictionMultiplier: number;
+    showGuide: boolean;
+    mirrorInput: boolean;
+    windForce: number;
+    onlyShape: CatShapeId | null;
+  };
+
   // Callbacks for haptic/sound feedback
   onCatDropped?: () => void;
   /** Called on merge with the evolution index (0-9) of the resulting cat */
@@ -30,14 +47,82 @@ export class GameLoop {
 
   state: GameState;
 
-  constructor(skinId: SkinId = "mike", forceShapeId?: CatShapeId) {
+  constructor(skinId: SkinId = "mike", forceShapeId?: CatShapeId, challengeConfig?: ChallengeConfig) {
     this.physics = new PhysicsWorld();
     this.spawner = new CatSpawner();
     this.collapse = new CollapseDetector();
     this.scorer = new ScoreCalculator();
     this.forceShapeId = forceShapeId;
+
+    // Default challenge params (no modifications)
+    this.challengeParams = {
+      catMassMultiplier: 1,
+      catRestitutionOverride: null,
+      catFrictionMultiplier: 1,
+      showGuide: true,
+      mirrorInput: false,
+      windForce: 0,
+      onlyShape: null,
+    };
+
     this.state = this.createInitialState(skinId);
+
+    // Apply challenge rule if provided
+    if (challengeConfig) {
+      this.state.dailyChallengeId = challengeConfig.challengeId;
+      this.applyChallenge(challengeConfig.rule);
+    }
+
     this.setupCollisionDetection();
+  }
+
+  private applyChallenge(rule: ChallengeRule): void {
+    const baseParams = {
+      gravity: { ...PHYSICS.GRAVITY },
+      catMass: 1,
+      catRestitution: 0.1,
+      catFriction: 1,
+      dropSpeed: 1,
+      showGuide: true,
+      windForce: 0,
+      mirrorInput: false,
+    };
+
+    const applied = applyChallengeRule(rule, baseParams);
+
+    // Apply gravity changes to physics engine
+    this.physics.engine.gravity.x = applied.gravity.x;
+    this.physics.engine.gravity.y = applied.gravity.y;
+
+    // Store challenge params for cat spawning
+    this.challengeParams.catMassMultiplier = applied.catMass;
+    this.challengeParams.catFrictionMultiplier = applied.catFriction;
+    this.challengeParams.showGuide = applied.showGuide;
+    this.challengeParams.mirrorInput = applied.mirrorInput;
+    this.challengeParams.windForce = applied.windForce;
+
+    if (applied.catRestitution !== baseParams.catRestitution) {
+      this.challengeParams.catRestitutionOverride = applied.catRestitution;
+    }
+
+    // Shape-only challenges
+    if (rule === "tiny_only") {
+      this.challengeParams.onlyShape = "tiny";
+      this.forceShapeId = "tiny";
+    } else if (rule === "fat_only") {
+      this.challengeParams.onlyShape = "fat";
+      this.forceShapeId = "fat";
+    }
+  }
+
+  /** Whether the guide arrow should be shown (respects no_guide challenge) */
+  get shouldShowGuide(): boolean {
+    return this.challengeParams.showGuide;
+  }
+
+  /** Whether input should be mirrored (mirror challenge) */
+  get isMirrorInput(): boolean {
+    return this.challengeParams.mirrorInput;
   }
 
   private createInitialState(skinId: SkinId): GameState {
@@ -231,6 +316,18 @@ export class GameLoop {
     const shapeId = this.state.nextShapeId;
     const startX = SCREEN_WIDTH / 2;
     const body = this.spawner.createCatBody(shapeId, startX);
+
+    // Apply challenge modifiers to the body
+    if (this.challengeParams.catMassMultiplier !== 1) {
+      Matter.Body.setMass(body, body.mass * this.challengeParams.catMassMultiplier);
+    }
+    if (this.challengeParams.catRestitutionOverride !== null) {
+      body.restitution = this.challengeParams.catRestitutionOverride;
+    }
+    if (this.challengeParams.catFrictionMultiplier !== 1) {
+      body.friction *= this.challengeParams.catFrictionMultiplier;
+    }
+
     this.physics.addBody(body);
     this.bodyShapeMap.set(body.id, shapeId);
 
@@ -305,13 +402,24 @@ export class GameLoop {
     const body = this.getBodyById(this.state.currentCat.bodyId);
     if (!body) return;
 
-    this.spawner.moveCatHorizontal(body, this.horizontalDirection);
+    // Apply mirror input if challenge active
+    const dir = this.challengeParams.mirrorInput ? -this.horizontalDirection : this.horizontalDirection;
+    this.spawner.moveCatHorizontal(body, dir);
 
     if (body.position.x >= SCREEN_WIDTH - 40) this.horizontalDirection = -1;
     if (body.position.x <= 40) this.horizontalDirection = 1;
   }
 
+  private applyWindForce(): void {
+    if (this.challengeParams.windForce <= 0) return;
+    const windX = (Math.random() - 0.5) * 2 * this.challengeParams.windForce;
+    for (const body of this.physics.getDynamicBodies()) {
+      Matter.Body.applyForce(body, body.position, { x: windX, y: 0 });
+    }
+  }
+
   private updateDropping(): void {
+    this.applyWindForce();
     this.physics.step();
 
     if (!this.state.currentCat) return;
@@ -330,6 +438,7 @@ export class GameLoop {
   }
 
   private updateSettling(): void {
+    this.applyWindForce();
     this.physics.step();
 
     const dynamicBodies = this.physics.getDynamicBodies();

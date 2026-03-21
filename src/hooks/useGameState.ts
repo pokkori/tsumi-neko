@@ -1,5 +1,5 @@
 import { useRef, useCallback, useState, useEffect } from "react";
-import { GameLoop } from "../engine/GameLoop";
+import { GameLoop, ChallengeConfig } from "../engine/GameLoop";
 import { GameState, SkinId, CatShapeId, AchievementId } from "../types";
 import { updateStats, addScoreRecord } from "../utils/storage";
 import { useGameStore } from "../stores/gameStore";
@@ -14,8 +14,17 @@ import {
   hapticsCollapse,
   hapticsCombo,
 } from "../utils/haptics";
+import {
+  playDropSound,
+  playMergeSound,
+  playLandSound,
+  playComboSound,
+  playCollapseSound,
+  playGameOverSound,
+  resumeAudioContext,
+} from "../utils/sound";
 
-export function useGameState(skinId: SkinId = "mike", forceShapeId?: CatShapeId) {
+export function useGameState(skinId: SkinId = "mike", forceShapeId?: CatShapeId, challengeConfig?: ChallengeConfig) {
   const gameLoopRef = useRef<GameLoop | null>(null);
   const animFrameRef = useRef<number | null>(null);
   const gameStartTimeRef = useRef<number>(Date.now());
@@ -28,30 +37,45 @@ export function useGameState(skinId: SkinId = "mike", forceShapeId?: CatShapeId)
     if (gameLoopRef.current) {
       gameLoopRef.current.destroy();
     }
-    const loop = new GameLoop(skinId, forceShapeId);
+    const loop = new GameLoop(skinId, forceShapeId, challengeConfig);
 
-    // Set up haptic callbacks
-    if (store.settings.hapticsEnabled) {
-      loop.onCatDropped = () => hapticsLight();
-      loop.onCatMerged = (evolutionIndex: number) => {
-        // Large cats (index >= 6) get double heavy, others get merge haptic
+    // Resume audio context on game start (requires user gesture)
+    resumeAudioContext();
+
+    // Set up haptic + sound callbacks
+    loop.onCatDropped = () => {
+      if (store.settings.hapticsEnabled) hapticsLight();
+      playDropSound();
+    };
+    loop.onCatMerged = (evolutionIndex: number) => {
+      if (store.settings.hapticsEnabled) {
         if (evolutionIndex >= 6) {
           hapticsMergeLarge();
         } else {
           hapticsMerge();
         }
-      };
-      loop.onCatLanded = () => hapticsLight();
-      loop.onCollapsed = () => hapticsCollapse();
-      loop.onCombo = (_comboCount: number) => hapticsCombo();
-    }
+      }
+      playMergeSound(evolutionIndex);
+    };
+    loop.onCatLanded = () => {
+      if (store.settings.hapticsEnabled) hapticsLight();
+      playLandSound();
+    };
+    loop.onCollapsed = () => {
+      if (store.settings.hapticsEnabled) hapticsCollapse();
+      playCollapseSound();
+    };
+    loop.onCombo = (comboCount: number) => {
+      if (store.settings.hapticsEnabled) hapticsCombo();
+      playComboSound(comboCount);
+    };
 
     gameLoopRef.current = loop;
     loop.start();
     gameStartTimeRef.current = Date.now();
     setGameState({ ...loop.state });
     setIsRunning(true);
-  }, [skinId, forceShapeId, store.settings.hapticsEnabled]);
+  }, [skinId, forceShapeId, store.settings.hapticsEnabled, challengeConfig]);
 
   const onTap = useCallback(() => {
     gameLoopRef.current?.onTap();
@@ -87,6 +111,7 @@ export function useGameState(skinId: SkinId = "mike", forceShapeId?: CatShapeId)
   }, [isRunning]);
 
   const handleGameOver = async (state: GameState) => {
+    playGameOverSound();
     const result = await updateStats({
       score: state.score,
       height: state.height,
