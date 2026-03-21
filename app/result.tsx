@@ -40,12 +40,32 @@ export default function ResultScreen() {
     ? (params.shapesUsed.split(",").filter(Boolean) as CatShapeId[])
     : [];
 
+  // maxEvolutionをshapesUsedから即座に計算（useEffectより前で確定させる）
+  const maxEvolution: string = (() => {
+    if (shapesUsed.length === 0) return "";
+    const evolutionOrder = CAT_SHAPES.map((s) => s.id);
+    let maxIndex = -1;
+    let maxShapeId: CatShapeId | null = null;
+    for (const shapeId of shapesUsed) {
+      const idx = evolutionOrder.indexOf(shapeId);
+      if (idx > maxIndex) {
+        maxIndex = idx;
+        maxShapeId = shapeId;
+      }
+    }
+    return maxShapeId ? (CAT_EMOJI[maxShapeId] || "") : "";
+  })();
+
   const [currentStreak, setCurrentStreak] = useState<number>(0);
   const [previewDataUrl, setPreviewDataUrl] = useState<string | null>(null);
+
+  // 今回解禁された最高進化ランクのバッジ表示（useEffectより前で確定させる）
+  const evolutionBadge = maxEvolution ? `最高進化 ${maxEvolution} 解禁！` : null;
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(0.8)).current;
   const confettiAnim = useRef(new Animated.Value(0)).current;
+  const badgePulseAnim = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
     loadData("@tsumineko/stats").then((stats) => {
@@ -83,23 +103,16 @@ export default function ResultScreen() {
         useNativeDriver: true,
       }),
     ]).start();
-  }, []);
-
-  // Calculate max evolution from shapesUsed (highest index in evolution chain)
-  const maxEvolution: string = (() => {
-    if (shapesUsed.length === 0) return "";
-    const evolutionOrder = CAT_SHAPES.map((s) => s.id);
-    let maxIndex = -1;
-    let maxShapeId: CatShapeId | null = null;
-    for (const shapeId of shapesUsed) {
-      const idx = evolutionOrder.indexOf(shapeId);
-      if (idx > maxIndex) {
-        maxIndex = idx;
-        maxShapeId = shapeId;
-      }
+    // Gold badge pulse (everlasting)
+    if (evolutionBadge) {
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(badgePulseAnim, { toValue: 1.08, duration: 700, useNativeDriver: true }),
+          Animated.timing(badgePulseAnim, { toValue: 1.0, duration: 700, useNativeDriver: true }),
+        ])
+      ).start();
     }
-    return maxShapeId ? (CAT_EMOJI[maxShapeId] || "") : "";
-  })();
+  }, []);
 
   const handleShare = () => {
     shareResult({ score, height, catCount, isNewRecord, mergeCount, shapesUsed, maxCombo, maxEvolution });
@@ -107,8 +120,6 @@ export default function ResultScreen() {
 
   // Generate emoji preview for display
   const emojiPreview = generateEmojiGrid(shapesUsed, mergeCount, catCount);
-  // 今回解禁された最高進化ランクのバッジ表示
-  const evolutionBadge = maxEvolution ? `最高進化 ${maxEvolution} 解禁！` : null;
 
   return (
     <SafeAreaView style={styles.container}>
@@ -166,11 +177,19 @@ export default function ResultScreen() {
         </View>
 
         {evolutionBadge && (
-          <View style={{ backgroundColor: 'rgba(255,215,0,0.15)', borderRadius: 8, padding: 8, marginTop: 8, borderWidth: 1, borderColor: 'rgba(255,215,0,0.4)' }}>
-            <Text style={{ color: '#FFD700', fontSize: 16, fontWeight: 'bold', textAlign: 'center' }}>
+          <Animated.View style={{
+            backgroundColor: 'rgba(255,215,0,0.18)',
+            borderRadius: 8,
+            padding: 8,
+            marginTop: 8,
+            borderWidth: 1.5,
+            borderColor: '#FFD700',
+            transform: [{ scale: badgePulseAnim }],
+          }}>
+            <Text style={{ color: '#FFD700', fontSize: 18, fontWeight: 'bold', textAlign: 'center' }}>
               {'🌟'} {evolutionBadge}
             </Text>
-          </View>
+          </Animated.View>
         )}
 
         {/* Streak Display */}
