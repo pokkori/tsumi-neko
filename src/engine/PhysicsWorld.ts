@@ -98,12 +98,17 @@ export class PhysicsWorld {
     return Math.min(...bodies.map((b) => b.position.y - 30));
   }
 
+  getBodyById(id: number): Matter.Body | undefined {
+    return Matter.Composite.allBodies(this.world).find((b) => b.id === id);
+  }
+
   clear(): void {
     const bodies = this.getDynamicBodies();
     bodies.forEach((b) => Matter.Composite.remove(this.world, b));
   }
 
   destroy(): void {
+    Matter.Events.off(this.engine, "collisionStart");
     Matter.Engine.clear(this.engine);
   }
 }

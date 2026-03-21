@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import {
   View,
   Text,
@@ -18,8 +18,13 @@ import { ComboPopup } from "../src/components/ComboPopup";
 import { CatPreview } from "../src/components/CatPreview";
 import { GuideArrow } from "../src/components/GuideArrow";
 import { Background } from "../src/components/Background";
+import { MergeEffect } from "../src/components/MergeEffect";
+import { TutorialOverlay } from "../src/components/TutorialOverlay";
 import { PHYSICS } from "../src/constants/physics";
 import { COLORS } from "../src/constants/colors";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
+const TUTORIAL_KEY = "@tsumineko/tutorial_seen";
 
 export default function GameScreen() {
   const router = useRouter();
@@ -34,11 +39,34 @@ export default function GameScreen() {
 
   const [paused, setPaused] = useState(false);
   const [started, setStarted] = useState(false);
+  const [showTutorial, setShowTutorial] = useState(false);
 
+  // Check if tutorial should be shown
   useEffect(() => {
+    (async () => {
+      try {
+        const seen = await AsyncStorage.getItem(TUTORIAL_KEY);
+        if (!seen) {
+          setShowTutorial(true);
+        } else {
+          startGame();
+          setStarted(true);
+        }
+      } catch {
+        startGame();
+        setStarted(true);
+      }
+    })();
+  }, []);
+
+  const handleTutorialComplete = useCallback(async () => {
+    setShowTutorial(false);
+    try {
+      await AsyncStorage.setItem(TUTORIAL_KEY, "true");
+    } catch {}
     startGame();
     setStarted(true);
-  }, []);
+  }, [startGame]);
 
   useEffect(() => {
     if (gameState?.phase === "gameover" && started) {
@@ -57,6 +85,8 @@ export default function GameScreen() {
             maxCombo: String(finalState.maxCombo),
             isNewRecord: String(finalState.isNewRecord),
             isDaily: String(isDaily),
+            mergeCount: String(finalState.mergeCount),
+            shapesUsed: finalState.shapesUsedInGame.join(","),
           },
         });
       }, 500);
@@ -69,7 +99,7 @@ export default function GameScreen() {
     onTap();
   };
 
-  if (!gameState) {
+  if (!gameState && !showTutorial) {
     return (
       <View style={styles.container}>
         <Text style={styles.loadingText}>Loading...</Text>
@@ -78,105 +108,131 @@ export default function GameScreen() {
   }
 
   return (
-    <TouchableWithoutFeedback onPress={handleTap}>
-      <View style={styles.container}>
-        <Background heightPx={gameState.heightPx} />
+    <>
+      <TutorialOverlay
+        visible={showTutorial}
+        onComplete={handleTutorialComplete}
+      />
 
-        {/* Daily Challenge Banner */}
-        {isDaily && (
-          <View style={styles.dailyBanner}>
-            <Text style={styles.dailyBannerText}>
-              📅 {challenge.ruleName}: {challenge.ruleDescription}
-            </Text>
-          </View>
-        )}
+      <TouchableWithoutFeedback onPress={handleTap}>
+        <View style={styles.container}>
+          {gameState && (
+            <>
+              <Background heightPx={gameState.heightPx} />
 
-        {/* HUD */}
-        <ScoreDisplay
-          score={gameState.score}
-          height={gameState.height}
-          catCount={gameState.catCount}
-          combo={gameState.combo}
-        />
+              {/* Daily Challenge Banner */}
+              {isDaily && (
+                <View style={styles.dailyBanner}>
+                  <Text style={styles.dailyBannerText}>
+                    {challenge.ruleName}: {challenge.ruleDescription}
+                  </Text>
+                </View>
+              )}
 
-        {/* Next Preview */}
-        <CatPreview shapeId={gameState.nextShapeId} />
+              {/* HUD */}
+              <ScoreDisplay
+                score={gameState.score}
+                height={gameState.height}
+                catCount={gameState.catCount}
+                combo={gameState.combo}
+              />
 
-        {/* Guide Arrow */}
-        {gameState.currentCat && gameState.phase === "idle" && settings.showGuide && (
-          <GuideArrow
-            x={gameState.currentCat.position.x}
-            topY={gameState.currentCat.position.y + gameState.cameraY + 30}
-            bottomY={PHYSICS.GROUND_Y + gameState.cameraY}
-            visible={true}
-          />
-        )}
+              {/* Merge count indicator */}
+              {gameState.mergeCount > 0 && (
+                <View style={styles.mergeCounter}>
+                  <Text style={styles.mergeCounterText}>
+                    Merge x{gameState.mergeCount}
+                  </Text>
+                </View>
+              )}
 
-        {/* Current Cat */}
-        {gameState.currentCat && (
-          <CatBody cat={gameState.currentCat} cameraY={gameState.cameraY} />
-        )}
+              {/* Next Preview */}
+              <CatPreview shapeId={gameState.nextShapeId} />
 
-        {/* Stacked Cats */}
-        {gameState.stackedCats.map((cat) => (
-          <CatBody key={cat.bodyId} cat={cat} cameraY={gameState.cameraY} />
-        ))}
+              {/* Guide Arrow */}
+              {gameState.currentCat && gameState.phase === "idle" && settings.showGuide && (
+                <GuideArrow
+                  x={gameState.currentCat.position.x}
+                  topY={gameState.currentCat.position.y + gameState.cameraY + 30}
+                  bottomY={PHYSICS.GROUND_Y + gameState.cameraY}
+                  visible={true}
+                />
+              )}
 
-        {/* Ground Line */}
-        <View
-          style={[
-            styles.ground,
-            { top: PHYSICS.GROUND_Y + gameState.cameraY },
-          ]}
-        />
+              {/* Current Cat */}
+              {gameState.currentCat && (
+                <CatBody cat={gameState.currentCat} cameraY={gameState.cameraY} />
+              )}
 
-        {/* Combo Popup */}
-        <ComboPopup combo={gameState.combo} />
+              {/* Stacked Cats */}
+              {gameState.stackedCats.map((cat) => (
+                <CatBody key={cat.bodyId} cat={cat} cameraY={gameState.cameraY} />
+              ))}
 
-        {/* Collapsing overlay */}
-        {gameState.phase === "collapsing" && (
-          <View style={styles.collapseOverlay}>
-            <Text style={styles.collapseText}>💥</Text>
-          </View>
-        )}
+              {/* Ground Line */}
+              <View
+                style={[
+                  styles.ground,
+                  { top: PHYSICS.GROUND_Y + gameState.cameraY },
+                ]}
+              />
 
-        {/* Pause Button */}
-        <TouchableOpacity
-          style={styles.pauseButton}
-          onPress={() => setPaused(true)}
-        >
-          <Text style={styles.pauseButtonText}>⏸</Text>
-        </TouchableOpacity>
+              {/* Combo Popup */}
+              <ComboPopup combo={gameState.combo} />
 
-        {/* Pause Modal */}
-        <Modal
-          visible={paused}
-          transparent={true}
-          animationType="fade"
-        >
-          <View style={styles.pauseOverlay}>
-            <View style={styles.pauseMenu}>
-              <Text style={styles.pauseTitle}>⏸ ポーズ中</Text>
-              <TouchableOpacity
-                style={styles.pauseMenuButton}
-                onPress={() => setPaused(false)}
-              >
-                <Text style={styles.pauseMenuButtonText}>▶ つづける</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.pauseMenuButton, styles.pauseMenuButtonSecondary]}
-                onPress={() => {
-                  setPaused(false);
-                  router.replace("/");
-                }}
-              >
-                <Text style={styles.pauseMenuButtonText}>🏠 タイトルへ</Text>
-              </TouchableOpacity>
+              {/* Merge Effect */}
+              <MergeEffect
+                mergeEvent={gameState.lastMergeEvent}
+                cameraY={gameState.cameraY}
+              />
+
+              {/* Collapsing overlay */}
+              {gameState.phase === "collapsing" && (
+                <View style={styles.collapseOverlay}>
+                  <Text style={styles.collapseText}>{"CRASH!"}</Text>
+                </View>
+              )}
+            </>
+          )}
+
+          {/* Pause Button */}
+          <TouchableOpacity
+            style={styles.pauseButton}
+            onPress={() => setPaused(true)}
+          >
+            <Text style={styles.pauseButtonText}>||</Text>
+          </TouchableOpacity>
+
+          {/* Pause Modal */}
+          <Modal
+            visible={paused}
+            transparent={true}
+            animationType="fade"
+          >
+            <View style={styles.pauseOverlay}>
+              <View style={styles.pauseMenu}>
+                <Text style={styles.pauseTitle}>PAUSE</Text>
+                <TouchableOpacity
+                  style={styles.pauseMenuButton}
+                  onPress={() => setPaused(false)}
+                >
+                  <Text style={styles.pauseMenuButtonText}>つづける</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.pauseMenuButton, styles.pauseMenuButtonSecondary]}
+                  onPress={() => {
+                    setPaused(false);
+                    router.replace("/");
+                  }}
+                >
+                  <Text style={styles.pauseMenuButtonText}>タイトルへ</Text>
+                </TouchableOpacity>
+              </View>
             </View>
-          </View>
-        </Modal>
-      </View>
-    </TouchableWithoutFeedback>
+          </Modal>
+        </View>
+      </TouchableWithoutFeedback>
+    </>
   );
 }
 
@@ -207,6 +263,21 @@ const styles = StyleSheet.create({
     textAlign: "center",
     fontWeight: "bold",
   },
+  mergeCounter: {
+    position: "absolute",
+    top: 52,
+    right: 16,
+    backgroundColor: "rgba(255,215,0,0.9)",
+    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    zIndex: 10,
+  },
+  mergeCounterText: {
+    color: "#333",
+    fontSize: 12,
+    fontWeight: "bold",
+  },
   ground: {
     position: "absolute",
     left: 0,
@@ -225,7 +296,12 @@ const styles = StyleSheet.create({
     zIndex: 30,
   },
   collapseText: {
-    fontSize: 64,
+    fontSize: 48,
+    fontWeight: "bold",
+    color: "#FF4444",
+    textShadowColor: "rgba(0,0,0,0.8)",
+    textShadowOffset: { width: 2, height: 2 },
+    textShadowRadius: 4,
   },
   pauseButton: {
     position: "absolute",
@@ -240,7 +316,9 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
   pauseButtonText: {
-    fontSize: 24,
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#FFFFFF",
   },
   pauseOverlay: {
     flex: 1,

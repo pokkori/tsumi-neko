@@ -9,8 +9,9 @@ import {
 } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { formatScore, formatHeight } from "../src/utils/format";
-import { shareResult } from "../src/utils/share";
+import { shareResult, generateEmojiGrid } from "../src/utils/share";
 import { COLORS } from "../src/constants/colors";
+import { CatShapeId } from "../src/types";
 
 export default function ResultScreen() {
   const router = useRouter();
@@ -21,6 +22,8 @@ export default function ResultScreen() {
     maxCombo: string;
     isNewRecord: string;
     isDaily: string;
+    mergeCount: string;
+    shapesUsed: string;
   }>();
 
   const score = parseInt(params.score || "0", 10);
@@ -29,6 +32,10 @@ export default function ResultScreen() {
   const maxCombo = parseInt(params.maxCombo || "0", 10);
   const isNewRecord = params.isNewRecord === "true";
   const isDaily = params.isDaily === "true";
+  const mergeCount = parseInt(params.mergeCount || "0", 10);
+  const shapesUsed: CatShapeId[] = params.shapesUsed
+    ? (params.shapesUsed.split(",").filter(Boolean) as CatShapeId[])
+    : [];
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(0.8)).current;
@@ -49,8 +56,11 @@ export default function ResultScreen() {
   }, []);
 
   const handleShare = () => {
-    shareResult({ score, height, catCount, isNewRecord });
+    shareResult({ score, height, catCount, isNewRecord, mergeCount, shapesUsed });
   };
+
+  // Generate emoji preview for display
+  const emojiPreview = generateEmojiGrid(shapesUsed, mergeCount, catCount);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -67,7 +77,7 @@ export default function ResultScreen() {
 
         {isNewRecord && (
           <View style={styles.newRecordBanner}>
-            <Text style={styles.newRecordText}>🏆 NEW RECORD! 🏆</Text>
+            <Text style={styles.newRecordText}>NEW RECORD!</Text>
           </View>
         )}
 
@@ -83,34 +93,49 @@ export default function ResultScreen() {
           </View>
           <View style={styles.scoreRow}>
             <Text style={styles.scoreLabel}>Cats</Text>
-            <Text style={styles.scoreValue}>{catCount}匹</Text>
+            <Text style={styles.scoreValue}>{catCount}</Text>
           </View>
           <View style={styles.scoreRow}>
             <Text style={styles.scoreLabel}>Combo</Text>
             <Text style={styles.scoreValue}>x{maxCombo}</Text>
           </View>
+          {mergeCount > 0 && (
+            <View style={styles.scoreRow}>
+              <Text style={styles.scoreLabel}>Merges</Text>
+              <Text style={[styles.scoreValue, styles.mergeValue]}>
+                x{mergeCount}
+              </Text>
+            </View>
+          )}
         </View>
+
+        {/* Emoji Grid Preview */}
+        {emojiPreview ? (
+          <View style={styles.emojiCard}>
+            <Text style={styles.emojiGrid}>{emojiPreview}</Text>
+          </View>
+        ) : null}
 
         {/* Buttons */}
         <TouchableOpacity
           style={styles.retryButton}
           onPress={() => router.replace("/game")}
         >
-          <Text style={styles.buttonText}>🔄 もう一回</Text>
+          <Text style={styles.buttonText}>もう一回</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
           style={styles.shareButton}
           onPress={handleShare}
         >
-          <Text style={styles.buttonText}>📸 シェアする</Text>
+          <Text style={styles.buttonText}>シェアする</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
           style={styles.homeButton}
           onPress={() => router.replace("/")}
         >
-          <Text style={styles.homeButtonText}>🏠 タイトルに戻る</Text>
+          <Text style={styles.homeButtonText}>タイトルに戻る</Text>
         </TouchableOpacity>
       </Animated.View>
     </SafeAreaView>
@@ -154,7 +179,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 24,
     width: "90%",
-    marginBottom: 24,
+    marginBottom: 16,
   },
   scoreRow: {
     flexDirection: "row",
@@ -172,6 +197,23 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: "bold",
     color: "#FFFFFF",
+  },
+  mergeValue: {
+    color: "#FFD700",
+  },
+  emojiCard: {
+    backgroundColor: "rgba(255,255,255,0.08)",
+    borderRadius: 12,
+    padding: 16,
+    width: "90%",
+    marginBottom: 20,
+    alignItems: "center",
+  },
+  emojiGrid: {
+    fontSize: 16,
+    color: "#FFFFFF",
+    textAlign: "center",
+    lineHeight: 24,
   },
   retryButton: {
     backgroundColor: COLORS.secondary,

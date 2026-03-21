@@ -1,10 +1,12 @@
-import { GameState, CatShapeId, SkinId } from "../types";
+import Matter from "matter-js";
+import { GameState, CatShapeId, SkinId, MergeEvent } from "../types";
 import { PhysicsWorld } from "./PhysicsWorld";
 import { CatSpawner } from "./CatSpawner";
 import { CollapseDetector } from "./CollapseDetector";
 import { ScoreCalculator } from "./ScoreCalculator";
 import { PHYSICS } from "../constants/physics";
 import { SCREEN_WIDTH } from "../constants/layout";
+import { CAT_SHAPES, EVOLUTION_MAP } from "../data/catShapes";
 
 export class GameLoop {
   private physics: PhysicsWorld;
@@ -15,6 +17,13 @@ export class GameLoop {
   private horizontalDirection: number = 1;
   private slowMotionFrames: number = 0;
   private forceShapeId: CatShapeId | undefined;
+  private bodyShapeMap: Map<number, CatShapeId> = new Map();
+  private pendingMerges: { bodyA: number; bodyB: number; shapeId: CatShapeId }[] = [];
+
+  // Callbacks for haptic/sound feedback
+  onCatDropped?: () => void;
+  onCatMerged?: () => void;
+  onCollapsed?: () => void;
 
   state: GameState;
 
@@ -25,6 +34,7 @@ export class GameLoop {
     this.scorer = new ScoreCalculator();
     this.forceShapeId = forceShapeId;
     this.state = this.createInitialState(skinId);
+    this.setupCollisionDetection();
   }
 
   private createInitialState(skinId: SkinId): GameState {
@@ -36,6 +46,7 @@ export class GameLoop {
       combo: 0,
       maxCombo: 0,
       catCount: 0,
+      mergeCount: 0,
       currentCat: null,
       nextShapeId: this.spawner.selectNextShape(this.forceShapeId),
       stackedCats: [],
@@ -44,7 +55,135 @@ export class GameLoop {
       isNewRecord: false,
       dailyChallengeId: null,
       activeSkinId: skinId,
+      lastMergeEvent: null,
+      shapesUsedInGame: [],
     };
+  }
+
+  private setupCollisionDetection(): void {
+    Matter.Events.on(this.physics.engine, "collisionStart", (event) => {
+      for (const pair of event.pairs) {
+        const shapeA = this.bodyShapeMap.get(pair.bodyA.id);
+        const shapeB = this.bodyShapeMap.get(pair.bodyB.id);
+
+        if (!shapeA || !shapeB) continue;
+        if (shapeA !== shapeB) continue;
+
+        // Same shape collision - check if evolution exists
+        const nextShape = EVOLUTION_MAP[shapeA];
+        if (!nextShape) continue;
+
+        // Don't merge the currently dropping cat
+        if (
+          this.state.currentCat &&
+          (pair.bodyA.id === this.state.currentCat.bodyId ||
+            pair.bodyB.id === this.state.currentCat.bodyId) &&
+          this.state.phase === "dropping"
+        ) {
+          continue;
+        }
+
+        // Queue merge (don't process during physics step)
+        this.pendingMerges.push({
+          bodyA: pair.bodyA.id,
+          bodyB: pair.bodyB.id,
+          shapeId: shapeA,
+        });
+      }
+    });
+  }
+
+  private processMerges(): void {
+    const processed = new Set<number>();
+
+    for (const merge of this.pendingMerges) {
+      if (processed.has(merge.bodyA) || processed.has(merge.bodyB)) continue;
+
+      const bodyA = this.physics.getBodyById(merge.bodyA);
+      const bodyB = this.physics.getBodyById(merge.bodyB);
+      if (!bodyA || !bodyB) continue;
+
+      // Check shape still matches (might have merged already)
+      const currentShapeA = this.bodyShapeMap.get(merge.bodyA);
+      const currentShapeB = this.bodyShapeMap.get(merge.bodyB);
+      if (currentShapeA !== merge.shapeId || currentShapeB !== merge.shapeId) continue;
+
+      const nextShape = EVOLUTION_MAP[merge.shapeId];
+      if (!nextShape) continue;
+
+      processed.add(merge.bodyA);
+      processed.add(merge.bodyB);
+
+      // Calculate merge position (midpoint)
+      const mergeX = (bodyA.position.x + bodyB.position.x) / 2;
+      const mergeY = (bodyA.position.y + bodyB.position.y) / 2;
+
+      // Remove old bodies
+      this.physics.removeBody(bodyA);
+      this.physics.removeBody(bodyB);
+      this.bodyShapeMap.delete(merge.bodyA);
+      this.bodyShapeMap.delete(merge.bodyB);
+
+      // Remove from stackedCats
+      this.state.stackedCats = this.state.stackedCats.filter(
+        (c) => c.bodyId !== merge.bodyA && c.bodyId !== merge.bodyB
+      );
+
+      // Create new evolved cat
+      const newShape = CAT_SHAPES.find((s) => s.id === nextShape)!;
+      const newBody = Matter.Bodies.fromVertices(mergeX, mergeY, [newShape.physicsVertices], {
+        mass: newShape.mass,
+        friction: newShape.friction,
+        restitution: newShape.restitution,
+        frictionAir: 0.01,
+        label: `cat_${nextShape}_${Date.now()}`,
+        render: { visible: false },
+      });
+
+      if (newShape.centerOfMass.x !== 0 || newShape.centerOfMass.y !== 0) {
+        Matter.Body.setCentre(newBody, newShape.centerOfMass, true);
+      }
+
+      this.physics.addBody(newBody);
+      this.bodyShapeMap.set(newBody.id, nextShape);
+
+      // Add new cat to stacked
+      this.state.stackedCats.push({
+        bodyId: newBody.id,
+        shapeId: nextShape,
+        skinId: this.state.activeSkinId,
+        expression: "love",
+        position: { x: mergeX, y: mergeY },
+        angle: 0,
+        isStacked: true,
+      });
+
+      // Track the shape
+      if (!this.state.shapesUsedInGame.includes(nextShape)) {
+        this.state.shapesUsedInGame.push(nextShape);
+      }
+
+      // Update score and merge count
+      this.state.mergeCount++;
+      const mergeBonus = 200 * (CAT_SHAPES.findIndex((s) => s.id === nextShape) + 1);
+      this.state.score += mergeBonus;
+      this.state.combo++;
+      this.state.maxCombo = Math.max(this.state.maxCombo, this.state.combo);
+
+      // Set merge event for visual feedback
+      this.state.lastMergeEvent = {
+        x: mergeX,
+        y: mergeY,
+        fromShapeId: merge.shapeId,
+        toShapeId: nextShape,
+        timestamp: Date.now(),
+      };
+
+      // Callback for haptics
+      this.onCatMerged?.();
+    }
+
+    this.pendingMerges = [];
   }
 
   start(): void {
@@ -56,6 +195,12 @@ export class GameLoop {
     const startX = SCREEN_WIDTH / 2;
     const body = this.spawner.createCatBody(shapeId, startX);
     this.physics.addBody(body);
+    this.bodyShapeMap.set(body.id, shapeId);
+
+    // Track shape used
+    if (!this.state.shapesUsedInGame.includes(shapeId)) {
+      this.state.shapesUsedInGame.push(shapeId);
+    }
 
     this.state.currentCat = {
       bodyId: body.id,
@@ -81,6 +226,7 @@ export class GameLoop {
     this.state.currentCat.expression = "scared";
     this.spawner.dropCat(body);
     this.state.phase = "dropping";
+    this.onCatDropped?.();
   }
 
   update(): GameState {
@@ -99,6 +245,11 @@ export class GameLoop {
         break;
       case "gameover":
         break;
+    }
+
+    // Process any pending merges
+    if (this.pendingMerges.length > 0) {
+      this.processMerges();
     }
 
     this.updateCamera();
@@ -183,7 +334,7 @@ export class GameLoop {
       this.state.catCount,
       this.state.height,
       this.state.combo
-    );
+    ) + (this.state.mergeCount * 200); // Keep merge bonus
 
     if (this.state.stackedCats.length >= 2) {
       const below = this.state.stackedCats[this.state.stackedCats.length - 2];
@@ -207,6 +358,7 @@ export class GameLoop {
     if (this.state.currentCat) {
       this.state.currentCat.expression = "shocked";
     }
+    this.onCollapsed?.();
   }
 
   private updateCamera(): void {
@@ -251,6 +403,7 @@ export class GameLoop {
 
     for (const body of fallenBodies) {
       this.physics.removeBody(body);
+      this.bodyShapeMap.delete(body.id);
     }
 
     this.state.stackedCats = this.state.stackedCats.filter((cat) => {

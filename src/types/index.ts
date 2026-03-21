@@ -119,6 +119,14 @@ export interface ActiveCat {
   isStacked: boolean;
 }
 
+export interface MergeEvent {
+  x: number;
+  y: number;
+  fromShapeId: CatShapeId;
+  toShapeId: CatShapeId;
+  timestamp: number;
+}
+
 export interface GameState {
   phase: GamePhase;
   score: number;
@@ -127,6 +135,7 @@ export interface GameState {
   combo: number;
   maxCombo: number;
   catCount: number;
+  mergeCount: number;
   currentCat: ActiveCat | null;
   nextShapeId: CatShapeId;
   stackedCats: ActiveCat[];
@@ -135,6 +144,8 @@ export interface GameState {
   isNewRecord: boolean;
   dailyChallengeId: string | null;
   activeSkinId: SkinId;
+  lastMergeEvent: MergeEvent | null;
+  shapesUsedInGame: CatShapeId[];
 }
 
 // ==========================================

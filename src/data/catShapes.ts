@@ -1,4 +1,33 @@
-import { CatShape } from "../types";
+import { CatShape, CatShapeId } from "../types";
+
+// Evolution chain: tiny -> round -> long -> flat -> loaf -> triangle -> curled -> fat -> stretchy -> chunky
+// Same shape cats merge into the next shape in the chain
+export const EVOLUTION_MAP: Record<CatShapeId, CatShapeId | null> = {
+  tiny: "round",
+  round: "long",
+  long: "flat",
+  flat: "loaf",
+  loaf: "triangle",
+  triangle: "curled",
+  curled: "fat",
+  fat: "stretchy",
+  stretchy: "chunky",
+  chunky: null, // Max level - no further evolution
+};
+
+// Emoji representation for each cat shape (for Wordle-style share)
+export const CAT_EMOJI: Record<CatShapeId, string> = {
+  tiny: "🐱",
+  round: "😺",
+  long: "😸",
+  flat: "😼",
+  loaf: "🍞",
+  triangle: "😻",
+  curled: "😽",
+  fat: "🙀",
+  stretchy: "😹",
+  chunky: "👑",
+};
 
 export const CAT_SHAPES: CatShape[] = [
   {

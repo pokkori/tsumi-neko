@@ -5,6 +5,7 @@ import { updateStats, addScoreRecord } from "../utils/storage";
 import { useGameStore } from "../stores/gameStore";
 import { ACHIEVEMENTS } from "../data/achievements";
 import { checkAchievements } from "./useAchievements";
+import { hapticsLight, hapticsSuccess, hapticsError } from "../utils/haptics";
 
 export function useGameState(skinId: SkinId = "mike", forceShapeId?: CatShapeId) {
   const gameLoopRef = useRef<GameLoop | null>(null);
@@ -20,12 +21,20 @@ export function useGameState(skinId: SkinId = "mike", forceShapeId?: CatShapeId)
       gameLoopRef.current.destroy();
     }
     const loop = new GameLoop(skinId, forceShapeId);
+
+    // Set up haptic callbacks
+    if (store.settings.hapticsEnabled) {
+      loop.onCatDropped = () => hapticsLight();
+      loop.onCatMerged = () => hapticsSuccess();
+      loop.onCollapsed = () => hapticsError();
+    }
+
     gameLoopRef.current = loop;
     loop.start();
     gameStartTimeRef.current = Date.now();
     setGameState({ ...loop.state });
     setIsRunning(true);
-  }, [skinId, forceShapeId]);
+  }, [skinId, forceShapeId, store.settings.hapticsEnabled]);
 
   const onTap = useCallback(() => {
     gameLoopRef.current?.onTap();
@@ -110,7 +119,8 @@ export function useGameState(skinId: SkinId = "mike", forceShapeId?: CatShapeId)
     // Earn coins
     const coinsEarned = state.catCount * 2
       + (state.maxCombo >= 10 ? 150 : state.maxCombo >= 5 ? 50 : 0)
-      + (result.isNewRecord ? 100 : 0);
+      + (result.isNewRecord ? 100 : 0)
+      + (state.mergeCount * 10); // Bonus coins for merges
     await store.addCoins(coinsEarned);
 
     if (gameLoopRef.current) {
