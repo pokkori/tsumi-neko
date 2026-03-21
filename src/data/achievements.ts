@@ -1,0 +1,28 @@
+import { Achievement } from "../types";
+
+export const ACHIEVEMENTS: Achievement[] = [
+  { id: "first_stack", name: "はじめてのつみネコ", description: "ネコを1匹積み上げた", icon: "🐱", rewardCoins: 50, isSecret: false },
+  { id: "stack_10", name: "10匹タワー", description: "1ゲームでネコを10匹積み上げた", icon: "🏗️", rewardCoins: 100, isSecret: false },
+  { id: "stack_50", name: "50匹の大タワー", description: "1ゲームでネコを50匹積み上げた", icon: "🗼", rewardCoins: 300, isSecret: false },
+  { id: "stack_100", name: "100匹タワー伝説", description: "1ゲームでネコを100匹積み上げた", icon: "🏰", rewardCoins: 500, isSecret: false },
+  { id: "height_1m", name: "1メートル到達", description: "タワーの高さが1mに到達", icon: "📏", rewardCoins: 50, isSecret: false },
+  { id: "height_5m", name: "5メートルの壁", description: "タワーの高さが5mに到達", icon: "🪜", rewardCoins: 200, isSecret: false },
+  { id: "height_10m", name: "天空ネコタワー", description: "タワーの高さが10mに到達", icon: "☁️", rewardCoins: 500, isSecret: false },
+  { id: "combo_5", name: "5コンボ", description: "5回連続でネコを安定させた", icon: "🔥", rewardCoins: 100, isSecret: false },
+  { id: "combo_10", name: "10コンボフィーバー", description: "10回連続でネコを安定させた", icon: "💥", rewardCoins: 200, isSecret: false },
+  { id: "combo_20", name: "コンボマスター", description: "20回連続でネコを安定させた", icon: "⚡", rewardCoins: 500, isSecret: false },
+  { id: "score_1000", name: "1,000点突破", description: "スコア1,000点を達成", icon: "🎯", rewardCoins: 50, isSecret: false },
+  { id: "score_5000", name: "5,000点の壁", description: "スコア5,000点を達成", icon: "🏅", rewardCoins: 200, isSecret: false },
+  { id: "score_10000", name: "万点プレイヤー", description: "スコア10,000点を達成", icon: "🏆", rewardCoins: 500, isSecret: false },
+  { id: "games_10", name: "ネコ中毒の始まり", description: "10回ゲームをプレイした", icon: "🎮", rewardCoins: 100, isSecret: false },
+  { id: "games_100", name: "つみネコマニア", description: "100回ゲームをプレイした", icon: "🎪", rewardCoins: 300, isSecret: false },
+  { id: "daily_clear", name: "デイリー初クリア", description: "デイリーチャレンジを初めてクリア", icon: "📅", rewardCoins: 100, isSecret: false },
+  { id: "daily_7", name: "7日連続プレイ", description: "7日連続でプレイした", icon: "📆", rewardCoins: 200, isSecret: false },
+  { id: "daily_30", name: "30日の絆", description: "30日連続でプレイした", icon: "🗓️", rewardCoins: 500, isSecret: false },
+  { id: "all_shapes", name: "全形状コンプリート", description: "全10種類の形状のネコを積み上げた", icon: "📚", rewardCoins: 300, isSecret: false },
+  { id: "skin_collector", name: "スキンコレクター", description: "5種類以上のスキンをアンロックした", icon: "👗", rewardCoins: 200, isSecret: false },
+  { id: "perfect_balance", name: "パーフェクトバランス", description: "1匹も落とさずに20匹積み上げた", icon: "⚖️", rewardCoins: 300, isSecret: true },
+  { id: "lucky_save", name: "奇跡の生還", description: "崩壊寸前でギリギリ持ちこたえた", icon: "🍀", rewardCoins: 200, isSecret: true },
+  { id: "speed_demon", name: "スピードデーモン", description: "10秒以内に5匹積み上げた", icon: "⏱️", rewardCoins: 300, isSecret: true },
+  { id: "night_owl", name: "夜ふかしネコ", description: "深夜2時〜4時にプレイした", icon: "🦉", rewardCoins: 100, isSecret: true },
+];

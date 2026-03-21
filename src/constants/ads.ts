@@ -1,0 +1,17 @@
+export const AD_CONFIG = {
+  BANNER_ID: {
+    ios: "ca-app-pub-XXXXXXXXXXXXXXXX/YYYYYYYYYY",
+    android: "ca-app-pub-XXXXXXXXXXXXXXXX/YYYYYYYYYY",
+  },
+  INTERSTITIAL_ID: {
+    ios: "ca-app-pub-XXXXXXXXXXXXXXXX/YYYYYYYYYY",
+    android: "ca-app-pub-XXXXXXXXXXXXXXXX/YYYYYYYYYY",
+  },
+  REWARD_ID: {
+    ios: "ca-app-pub-XXXXXXXXXXXXXXXX/YYYYYYYYYY",
+    android: "ca-app-pub-XXXXXXXXXXXXXXXX/YYYYYYYYYY",
+  },
+  INTERSTITIAL_INTERVAL: 3,
+  REWARD_COOLDOWN_MS: 300_000,
+  REWARD_PER_GAME_LIMIT: 1,
+} as const;

@@ -1,0 +1,30 @@
+export const PHYSICS = {
+  GRAVITY: { x: 0, y: 1.2 },
+  TIMESTEP: 1000 / 60,
+  GROUND_Y: 750,
+  GROUND: {
+    friction: 0.8,
+    restitution: 0.05,
+    isStatic: true,
+  },
+  WALL: {
+    friction: 0.3,
+    restitution: 0.1,
+    isStatic: true,
+  },
+  SPAWN_Y: -80,
+  HORIZONTAL_SPEED: 3.0,
+  MOVE_RANGE: 0.85,
+  COLLAPSE_THRESHOLD_PX: 50,
+  STABLE_VELOCITY_THRESHOLD: 0.3,
+  STABLE_FRAME_COUNT: 90,
+  OUT_OF_BOUNDS: {
+    left: -100,
+    right: 500,
+    bottom: 900,
+  },
+  COLLAPSE_SLOW_FACTOR: 0.15,
+  COLLAPSE_SLOW_DURATION: 1500,
+  CAMERA_LERP: 0.08,
+  CAMERA_MIN_Y: 0,
+} as const;
