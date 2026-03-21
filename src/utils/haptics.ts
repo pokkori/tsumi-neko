@@ -38,10 +38,61 @@ export async function hapticsSuccess(): Promise<void> {
   } catch {}
 }
 
+export async function hapticsHeavy(): Promise<void> {
+  const h = await getHaptics();
+  if (!h) return;
+  try {
+    await h.impactAsync(h.ImpactFeedbackStyle.Heavy);
+  } catch {}
+}
+
 export async function hapticsError(): Promise<void> {
   const h = await getHaptics();
   if (!h) return;
   try {
     await h.notificationAsync(h.NotificationFeedbackType.Error);
+  } catch {}
+}
+
+/** Heavy impact + success notification for merges */
+export async function hapticsMerge(): Promise<void> {
+  const h = await getHaptics();
+  if (!h) return;
+  try {
+    await h.impactAsync(h.ImpactFeedbackStyle.Heavy);
+    await h.notificationAsync(h.NotificationFeedbackType.Success);
+  } catch {}
+}
+
+/** Double heavy impact for large cat merges */
+export async function hapticsMergeLarge(): Promise<void> {
+  const h = await getHaptics();
+  if (!h) return;
+  try {
+    await h.impactAsync(h.ImpactFeedbackStyle.Heavy);
+    setTimeout(async () => {
+      try {
+        await h.impactAsync(h.ImpactFeedbackStyle.Heavy);
+      } catch {}
+    }, 50);
+  } catch {}
+}
+
+/** Error notification + heavy impact for collapse */
+export async function hapticsCollapse(): Promise<void> {
+  const h = await getHaptics();
+  if (!h) return;
+  try {
+    await h.notificationAsync(h.NotificationFeedbackType.Error);
+    await h.impactAsync(h.ImpactFeedbackStyle.Heavy);
+  } catch {}
+}
+
+/** Medium impact for combo */
+export async function hapticsCombo(): Promise<void> {
+  const h = await getHaptics();
+  if (!h) return;
+  try {
+    await h.impactAsync(h.ImpactFeedbackStyle.Medium);
   } catch {}
 }

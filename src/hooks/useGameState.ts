@@ -5,7 +5,15 @@ import { updateStats, addScoreRecord } from "../utils/storage";
 import { useGameStore } from "../stores/gameStore";
 import { ACHIEVEMENTS } from "../data/achievements";
 import { checkAchievements } from "./useAchievements";
-import { hapticsLight, hapticsSuccess, hapticsError } from "../utils/haptics";
+import {
+  hapticsLight,
+  hapticsSuccess,
+  hapticsError,
+  hapticsMerge,
+  hapticsMergeLarge,
+  hapticsCollapse,
+  hapticsCombo,
+} from "../utils/haptics";
 
 export function useGameState(skinId: SkinId = "mike", forceShapeId?: CatShapeId) {
   const gameLoopRef = useRef<GameLoop | null>(null);
@@ -25,8 +33,17 @@ export function useGameState(skinId: SkinId = "mike", forceShapeId?: CatShapeId)
     // Set up haptic callbacks
     if (store.settings.hapticsEnabled) {
       loop.onCatDropped = () => hapticsLight();
-      loop.onCatMerged = () => hapticsSuccess();
-      loop.onCollapsed = () => hapticsError();
+      loop.onCatMerged = (evolutionIndex: number) => {
+        // Large cats (index >= 6) get double heavy, others get merge haptic
+        if (evolutionIndex >= 6) {
+          hapticsMergeLarge();
+        } else {
+          hapticsMerge();
+        }
+      };
+      loop.onCatLanded = () => hapticsLight();
+      loop.onCollapsed = () => hapticsCollapse();
+      loop.onCombo = (_comboCount: number) => hapticsCombo();
     }
 
     gameLoopRef.current = loop;

@@ -125,6 +125,15 @@ export interface MergeEvent {
   fromShapeId: CatShapeId;
   toShapeId: CatShapeId;
   timestamp: number;
+  /** Index of the evolved shape in CAT_SHAPES (0-9), higher = larger cat */
+  evolutionIndex: number;
+}
+
+export interface LandingEvent {
+  bodyId: number;
+  x: number;
+  y: number;
+  timestamp: number;
 }
 
 export interface GameState {
@@ -145,6 +154,7 @@ export interface GameState {
   dailyChallengeId: string | null;
   activeSkinId: SkinId;
   lastMergeEvent: MergeEvent | null;
+  landingEvents: LandingEvent[];
   shapesUsedInGame: CatShapeId[];
 }
 

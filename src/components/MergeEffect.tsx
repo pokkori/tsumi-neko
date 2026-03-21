@@ -8,11 +8,107 @@ interface MergeEffectProps {
   cameraY: number;
 }
 
+const PARTICLE_COLORS = [
+  "#FFD700", "#FF6B6B", "#4ECDC4", "#45B7D1",
+  "#96CEB4", "#FFEAA7", "#DDA0DD", "#FF8C69",
+  "#98D8C8", "#F7DC6F", "#BB8FCE", "#85C1E9",
+];
+
+interface ParticleConfig {
+  angle: number;
+  speed: number;
+  color: string;
+  size: number;
+  delay: number;
+}
+
+function generateParticles(count: number): ParticleConfig[] {
+  const particles: ParticleConfig[] = [];
+  for (let i = 0; i < count; i++) {
+    const angle = (Math.PI * 2 * i) / count + (Math.random() - 0.5) * 0.5;
+    particles.push({
+      angle,
+      speed: 60 + Math.random() * 80,
+      color: PARTICLE_COLORS[i % PARTICLE_COLORS.length],
+      size: 6 + Math.random() * 6,
+      delay: Math.random() * 50,
+    });
+  }
+  return particles;
+}
+
+const Particle: React.FC<{
+  config: ParticleConfig;
+  originX: number;
+  originY: number;
+  active: boolean;
+}> = ({ config, originX, originY, active }) => {
+  const translateX = useRef(new Animated.Value(0)).current;
+  const translateY = useRef(new Animated.Value(0)).current;
+  const opacity = useRef(new Animated.Value(0)).current;
+  const scale = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    if (!active) return;
+
+    translateX.setValue(0);
+    translateY.setValue(0);
+    opacity.setValue(1);
+    scale.setValue(1);
+
+    const destX = Math.cos(config.angle) * config.speed;
+    const destY = Math.sin(config.angle) * config.speed;
+
+    Animated.parallel([
+      Animated.timing(translateX, {
+        toValue: destX,
+        duration: 500,
+        useNativeDriver: true,
+      }),
+      Animated.timing(translateY, {
+        toValue: destY,
+        duration: 500,
+        useNativeDriver: true,
+      }),
+      Animated.timing(opacity, {
+        toValue: 0,
+        duration: 500,
+        delay: 100,
+        useNativeDriver: true,
+      }),
+      Animated.timing(scale, {
+        toValue: 0.2,
+        duration: 500,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, [active]);
+
+  return (
+    <Animated.View
+      style={{
+        position: "absolute",
+        left: originX - config.size / 2,
+        top: originY - config.size / 2,
+        width: config.size,
+        height: config.size,
+        borderRadius: config.size / 2,
+        backgroundColor: config.color,
+        opacity,
+        transform: [{ translateX }, { translateY }, { scale }],
+      }}
+      pointerEvents="none"
+    />
+  );
+};
+
 export const MergeEffect: React.FC<MergeEffectProps> = ({ mergeEvent, cameraY }) => {
   const [activeEvent, setActiveEvent] = useState<MergeEvent | null>(null);
+  const [particles, setParticles] = useState<ParticleConfig[]>([]);
   const scaleAnim = useRef(new Animated.Value(0)).current;
   const opacityAnim = useRef(new Animated.Value(0)).current;
   const flashAnim = useRef(new Animated.Value(0)).current;
+  const bounceScale = useRef(new Animated.Value(0)).current;
   const lastTimestamp = useRef(0);
 
   useEffect(() => {
@@ -20,11 +116,18 @@ export const MergeEffect: React.FC<MergeEffectProps> = ({ mergeEvent, cameraY })
     lastTimestamp.current = mergeEvent.timestamp;
     setActiveEvent(mergeEvent);
 
+    // More particles for larger cats
+    const isLargeCat = mergeEvent.evolutionIndex >= 6;
+    const particleCount = isLargeCat ? 16 : 10;
+    setParticles(generateParticles(particleCount));
+
     scaleAnim.setValue(0.3);
     opacityAnim.setValue(1);
-    flashAnim.setValue(1);
+    flashAnim.setValue(isLargeCat ? 0.6 : 0.3);
+    bounceScale.setValue(0.5);
 
     Animated.parallel([
+      // Merge text scale + fade
       Animated.spring(scaleAnim, {
         toValue: 1.5,
         friction: 4,
@@ -36,9 +139,17 @@ export const MergeEffect: React.FC<MergeEffectProps> = ({ mergeEvent, cameraY })
         duration: 800,
         useNativeDriver: true,
       }),
+      // Flash overlay
       Animated.timing(flashAnim, {
         toValue: 0,
-        duration: 300,
+        duration: isLargeCat ? 400 : 300,
+        useNativeDriver: true,
+      }),
+      // Bounce scale: 0.5 -> 1.3 -> 1.0 spring
+      Animated.spring(bounceScale, {
+        toValue: 1.0,
+        friction: 3,
+        tension: 180,
         useNativeDriver: true,
       }),
     ]).start(() => {
@@ -50,6 +161,8 @@ export const MergeEffect: React.FC<MergeEffectProps> = ({ mergeEvent, cameraY })
 
   const newShape = CAT_SHAPES.find((s) => s.id === activeEvent.toShapeId);
   const shapeName = newShape?.name || "";
+  const eventX = activeEvent.x;
+  const eventY = activeEvent.y + cameraY;
 
   return (
     <>
@@ -62,29 +175,38 @@ export const MergeEffect: React.FC<MergeEffectProps> = ({ mergeEvent, cameraY })
         pointerEvents="none"
       />
 
-      {/* Merge particles / burst */}
+      {/* Particles */}
+      {particles.map((p, i) => (
+        <Particle
+          key={`${activeEvent.timestamp}-${i}`}
+          config={p}
+          originX={eventX}
+          originY={eventY}
+          active={true}
+        />
+      ))}
+
+      {/* Bounce scale ring */}
       <Animated.View
         style={[
-          styles.burstContainer,
+          styles.bounceRing,
           {
-            left: activeEvent.x - 50,
-            top: activeEvent.y + cameraY - 50,
+            left: eventX - 40,
+            top: eventY - 40,
             opacity: opacityAnim,
-            transform: [{ scale: scaleAnim }],
+            transform: [{ scale: bounceScale }],
           },
         ]}
         pointerEvents="none"
-      >
-        <Text style={styles.burstEmoji}>{"✨"}</Text>
-      </Animated.View>
+      />
 
       {/* Evolution text */}
       <Animated.View
         style={[
           styles.textContainer,
           {
-            left: activeEvent.x - 80,
-            top: activeEvent.y + cameraY - 80,
+            left: eventX - 80,
+            top: eventY - 80,
             opacity: opacityAnim,
             transform: [{ scale: scaleAnim }],
           },
@@ -104,16 +226,15 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255,255,200,0.4)",
     zIndex: 25,
   },
-  burstContainer: {
+  bounceRing: {
     position: "absolute",
-    width: 100,
-    height: 100,
-    justifyContent: "center",
-    alignItems: "center",
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    borderWidth: 3,
+    borderColor: "rgba(255,215,0,0.6)",
+    backgroundColor: "rgba(255,255,200,0.2)",
     zIndex: 26,
-  },
-  burstEmoji: {
-    fontSize: 48,
   },
   textContainer: {
     position: "absolute",

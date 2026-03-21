@@ -19,6 +19,8 @@ import { CatPreview } from "../src/components/CatPreview";
 import { GuideArrow } from "../src/components/GuideArrow";
 import { Background } from "../src/components/Background";
 import { MergeEffect } from "../src/components/MergeEffect";
+import { ScreenShake } from "../src/components/ScreenShake";
+import { LandingBounce } from "../src/components/LandingBounce";
 import { TutorialOverlay } from "../src/components/TutorialOverlay";
 import { PHYSICS } from "../src/constants/physics";
 import { COLORS } from "../src/constants/colors";
@@ -117,7 +119,7 @@ export default function GameScreen() {
       <TouchableWithoutFeedback onPress={handleTap}>
         <View style={styles.container}>
           {gameState && (
-            <>
+            <ScreenShake mergeEvent={gameState.lastMergeEvent} style={styles.shakeContainer}>
               <Background heightPx={gameState.heightPx} />
 
               {/* Daily Challenge Banner */}
@@ -186,13 +188,19 @@ export default function GameScreen() {
                 cameraY={gameState.cameraY}
               />
 
+              {/* Landing Bounce Ripples */}
+              <LandingBounce
+                landingEvents={gameState.landingEvents}
+                cameraY={gameState.cameraY}
+              />
+
               {/* Collapsing overlay */}
               {gameState.phase === "collapsing" && (
                 <View style={styles.collapseOverlay}>
                   <Text style={styles.collapseText}>{"CRASH!"}</Text>
                 </View>
               )}
-            </>
+            </ScreenShake>
           )}
 
           {/* Pause Button */}
@@ -240,6 +248,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#87CEEB",
+  },
+  shakeContainer: {
+    flex: 1,
   },
   loadingText: {
     fontSize: 24,

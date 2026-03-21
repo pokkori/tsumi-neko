@@ -22,8 +22,11 @@ export class GameLoop {
 
   // Callbacks for haptic/sound feedback
   onCatDropped?: () => void;
-  onCatMerged?: () => void;
+  /** Called on merge with the evolution index (0-9) of the resulting cat */
+  onCatMerged?: (evolutionIndex: number) => void;
+  onCatLanded?: () => void;
   onCollapsed?: () => void;
+  onCombo?: (comboCount: number) => void;
 
   state: GameState;
 
@@ -56,6 +59,7 @@ export class GameLoop {
       dailyChallengeId: null,
       activeSkinId: skinId,
       lastMergeEvent: null,
+      landingEvents: [],
       shapesUsedInGame: [],
     };
   }
@@ -65,6 +69,30 @@ export class GameLoop {
       for (const pair of event.pairs) {
         const shapeA = this.bodyShapeMap.get(pair.bodyA.id);
         const shapeB = this.bodyShapeMap.get(pair.bodyB.id);
+
+        // Landing detection: a dynamic cat hits ground/wall or another cat (non-merge)
+        const isGroundOrWall = (b: Matter.Body) =>
+          b.isStatic && (b.label === "ground" || b.label?.startsWith("wall"));
+
+        if (isGroundOrWall(pair.bodyA) && shapeB) {
+          // bodyB landed on ground/wall
+          this.state.landingEvents.push({
+            bodyId: pair.bodyB.id,
+            x: pair.bodyB.position.x,
+            y: pair.bodyB.position.y,
+            timestamp: Date.now(),
+          });
+          this.onCatLanded?.();
+        } else if (isGroundOrWall(pair.bodyB) && shapeA) {
+          // bodyA landed on ground/wall
+          this.state.landingEvents.push({
+            bodyId: pair.bodyA.id,
+            x: pair.bodyA.position.x,
+            y: pair.bodyA.position.y,
+            timestamp: Date.now(),
+          });
+          this.onCatLanded?.();
+        }
 
         if (!shapeA || !shapeB) continue;
         if (shapeA !== shapeB) continue;
@@ -170,6 +198,9 @@ export class GameLoop {
       this.state.combo++;
       this.state.maxCombo = Math.max(this.state.maxCombo, this.state.combo);
 
+      // Calculate evolution index for intensity scaling
+      const evolutionIndex = CAT_SHAPES.findIndex((s) => s.id === nextShape);
+
       // Set merge event for visual feedback
       this.state.lastMergeEvent = {
         x: mergeX,
@@ -177,10 +208,16 @@ export class GameLoop {
         fromShapeId: merge.shapeId,
         toShapeId: nextShape,
         timestamp: Date.now(),
+        evolutionIndex,
       };
 
-      // Callback for haptics
-      this.onCatMerged?.();
+      // Callback for haptics with evolution index
+      this.onCatMerged?.(evolutionIndex);
+
+      // Combo callback
+      if (this.state.combo > 1) {
+        this.onCombo?.(this.state.combo);
+      }
     }
 
     this.pendingMerges = [];
@@ -246,6 +283,12 @@ export class GameLoop {
       case "gameover":
         break;
     }
+
+    // Clear stale landing events (older than 500ms)
+    const now = Date.now();
+    this.state.landingEvents = this.state.landingEvents.filter(
+      (e) => now - e.timestamp < 500
+    );
 
     // Process any pending merges
     if (this.pendingMerges.length > 0) {
