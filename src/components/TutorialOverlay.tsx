@@ -16,17 +16,17 @@ interface TutorialOverlayProps {
 
 const STEPS = [
   {
-    emoji: "👆",
+    emoji: "1",
     title: "ドラッグで位置を決めて落とそう!",
     description: "画面を左右にドラッグして落とす位置を決め、指を離すと猫が落ちるよ!",
   },
   {
-    emoji: "✨",
+    emoji: "2",
     title: "同じ猫がぶつかると合体・進化!",
     description: "同じ形の猫同士がぶつかると次の形に進化！10段階で最強のずんぐりネコを目指そう!",
   },
   {
-    emoji: "👑",
+    emoji: "3",
     title: "目標は「ずんぐりネコ」誕生!",
     description: "合体を繰り返してずんぐりネコを生み出せ！崩さないように高く積んでハイスコアも狙おう!",
   },
