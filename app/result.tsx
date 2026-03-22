@@ -358,12 +358,57 @@ export default function ResultScreen() {
           </View>
         )}
 
-        {/* 7日ストリーク達成バナー */}
-        {currentStreak > 0 && currentStreak % 7 === 0 && (
+        {/* マイルストーンバナー（7日/14日/30日） */}
+        {currentStreak === 30 && (
+          <View style={{ backgroundColor: '#ef4444', borderRadius: 12, padding: 16, marginVertical: 12, alignItems: 'center', borderWidth: 2, borderColor: '#fca5a5' }}>
+            <Text style={{ fontWeight: 'bold', fontSize: 20, color: '#fff' }}>1ヶ月連続！チャンピオン！</Text>
+            <Text style={{ fontSize: 14, color: '#fecaca', marginTop: 4 }}>STREAK: {currentStreak}日 - 伝説達成！</Text>
+          </View>
+        )}
+        {currentStreak === 14 && (
+          <View style={{ backgroundColor: '#a855f7', borderRadius: 12, padding: 16, marginVertical: 12, alignItems: 'center', borderWidth: 2, borderColor: '#d8b4fe' }}>
+            <Text style={{ fontWeight: 'bold', fontSize: 20, color: '#fff' }}>2週間連続！すごい！</Text>
+            <Text style={{ fontSize: 14, color: '#e9d5ff', marginTop: 4 }}>STREAK: {currentStreak}日</Text>
+          </View>
+        )}
+        {currentStreak === 7 && (
           <View style={{ backgroundColor: '#FFD700', borderRadius: 12, padding: 16, marginVertical: 12, alignItems: 'center' }}>
             <Text style={{ fontWeight: 'bold', fontSize: 18, color: '#1a1a1a' }}>7日連続達成！ストリーク継続中！</Text>
             <Text style={{ fontSize: 14, color: '#1a1a1a', marginTop: 4 }}>STREAK: {currentStreak}日</Text>
           </View>
+        )}
+        {currentStreak > 0 && currentStreak % 7 === 0 && currentStreak > 7 && currentStreak !== 14 && currentStreak !== 30 && (
+          <View style={{ backgroundColor: '#FFD700', borderRadius: 12, padding: 16, marginVertical: 12, alignItems: 'center' }}>
+            <Text style={{ fontWeight: 'bold', fontSize: 18, color: '#1a1a1a' }}>{currentStreak}日連続達成！すごい！</Text>
+            <Text style={{ fontSize: 14, color: '#1a1a1a', marginTop: 4 }}>STREAK: {currentStreak}日</Text>
+          </View>
+        )}
+
+        {/* デイリー未達成ユーザーへの誘導CTA */}
+        {!isDaily && currentStreak >= 1 && (
+          <TouchableOpacity
+            style={{
+              minHeight: 44,
+              backgroundColor: 'rgba(79,195,247,0.2)',
+              borderRadius: 12,
+              paddingHorizontal: 20,
+              paddingVertical: 12,
+              marginBottom: 8,
+              borderWidth: 1,
+              borderColor: 'rgba(79,195,247,0.5)',
+              alignItems: 'center',
+            }}
+            accessibilityLabel="デイリーチャレンジに挑戦する"
+            accessibilityRole="button"
+            onPress={() => router.replace('/')}
+          >
+            <Text style={{ color: '#4FC3F7', fontWeight: 'bold', fontSize: 14 }}>
+              今日のデイリーチャレンジも挑戦！
+            </Text>
+            <Text style={{ color: '#aaa', fontSize: 11, marginTop: 2 }}>
+              クリアでコイン+100枚
+            </Text>
+          </TouchableOpacity>
         )}
 
         {/* OGP Image Preview (web) or Emoji Grid (native) */}

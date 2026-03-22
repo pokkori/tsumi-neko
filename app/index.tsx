@@ -8,7 +8,6 @@ import {
   SafeAreaView,
 } from "react-native";
 import { useRouter } from "expo-router";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useGameStore } from "../src/stores/gameStore";
 import { useDailyChallenge } from "../src/hooks/useDailyChallenge";
 import { DailyBadge } from "../src/components/DailyBadge";
@@ -16,9 +15,7 @@ import { formatScore, formatHeight } from "../src/utils/format";
 import { COLORS } from "../src/constants/colors";
 import { CatTowerSVG } from "../src/components/CatTowerSVG";
 import { scheduleDailyReminderAsync } from "../src/utils/notifications";
-
-const STREAK_KEY = "streak_days";
-const STREAK_DATE_KEY = "streak_last_date";
+import { loadData } from "../src/utils/storage";
 
 export default function TitleScreen() {
   const router = useRouter();
@@ -41,38 +38,14 @@ export default function TitleScreen() {
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const catBounce = useRef(new Animated.Value(0)).current;
 
-  // N-R25-10: ストリーク連続プレイ
+  // ストリーク: @tsumineko/stats.currentStreak をSINGLE SOURCE OF TRUTHとして参照
+  // 旧STREAK_KEY（AsyncStorage直接）は廃止。storage.tsのupdateStats()が管理する値を使用
   useEffect(() => {
-    (async () => {
-      try {
-        const today = new Date().toISOString().split("T")[0];
-        const lastDate = await AsyncStorage.getItem(STREAK_DATE_KEY);
-        const storedStreak = await AsyncStorage.getItem(STREAK_KEY);
-        let streak = storedStreak ? parseInt(storedStreak, 10) : 0;
-
-        if (lastDate === today) {
-          // Already played today, keep streak
-        } else if (lastDate) {
-          const last = new Date(lastDate);
-          const now = new Date(today);
-          const diffDays = Math.floor((now.getTime() - last.getTime()) / 86400000);
-          if (diffDays === 1) {
-            streak += 1;
-          } else {
-            streak = 1;
-          }
-          await AsyncStorage.setItem(STREAK_KEY, String(streak));
-          await AsyncStorage.setItem(STREAK_DATE_KEY, today);
-        } else {
-          streak = 1;
-          await AsyncStorage.setItem(STREAK_KEY, String(streak));
-          await AsyncStorage.setItem(STREAK_DATE_KEY, today);
-        }
-        setStreakDays(streak);
-      } catch {
-        // ignore
-      }
-    })();
+    loadData("@tsumineko/stats").then((stats) => {
+      setStreakDays(stats.currentStreak);
+    }).catch(() => {
+      // ignore
+    });
   }, []);
 
   useEffect(() => {
