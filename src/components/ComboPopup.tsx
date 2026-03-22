@@ -13,6 +13,7 @@ export const ComboPopup: React.FC<ComboPopupProps> = ({ combo }) => {
   const [text, setText] = useState("");
   const [color, setColor] = useState("#FFFFFF");
   const opacity = React.useRef(new Animated.Value(0)).current;
+  const scale = React.useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     const comboText = scorer.getComboText(combo);
@@ -21,19 +22,38 @@ export const ComboPopup: React.FC<ComboPopupProps> = ({ combo }) => {
       setColor(scorer.getComboColor(combo));
       setVisible(true);
       opacity.setValue(1);
+      scale.setValue(0);
 
-      Animated.timing(opacity, {
-        toValue: 0,
-        duration: 1500,
-        useNativeDriver: true,
-      }).start(() => setVisible(false));
+      // Bounce animation: 0 -> 1.2 -> 1.0 in 0.3s, then fade out
+      Animated.sequence([
+        Animated.parallel([
+          Animated.sequence([
+            Animated.timing(scale, {
+              toValue: 1.2,
+              duration: 150,
+              useNativeDriver: true,
+            }),
+            Animated.timing(scale, {
+              toValue: 1.0,
+              duration: 150,
+              useNativeDriver: true,
+            }),
+          ]),
+        ]),
+        Animated.delay(900),
+        Animated.timing(opacity, {
+          toValue: 0,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+      ]).start(() => setVisible(false));
     }
   }, [combo]);
 
   if (!visible) return null;
 
   return (
-    <Animated.View style={[styles.container, { opacity }]}>
+    <Animated.View style={[styles.container, { opacity, transform: [{ scale }] }]}>
       <Text style={[styles.text, { color }]}>{text}</Text>
     </Animated.View>
   );

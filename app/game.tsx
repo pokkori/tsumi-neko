@@ -437,7 +437,7 @@ export default function GameScreen() {
                         setShowContinueModal(false);
                         continueFromReward();
                       } else {
-                        Alert.alert("コイン不足", `コンティニューには🪙${CONTINUE_COST}枚必要です\n（現在: ${coins}枚）\n\nプレイを重ねてコインを貯めよう！`);
+                        Alert.alert("コイン不足", `コンティニューにはCOIN ${CONTINUE_COST}枚必要です\n（現在: ${coins}枚）\n\nプレイを重ねてコインを貯めよう！`);
                       }
                     }}
                   >

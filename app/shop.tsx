@@ -68,8 +68,8 @@ export default function ShopScreen() {
         <TouchableOpacity onPress={() => router.back()}>
           <Text style={styles.backButton}>← 戻る</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>🛍 ショップ</Text>
-        <Text style={styles.coins}>🪙 {formatCoins(wallet.coins)}</Text>
+        <Text style={styles.headerTitle}>SHOP</Text>
+        <Text style={styles.coins}>COIN: {formatCoins(wallet.coins)}</Text>
       </View>
 
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
@@ -85,7 +85,7 @@ export default function ShopScreen() {
           alignItems: 'center',
           gap: 8,
         }}>
-          <Text style={{ fontSize: 20 }}>🪙</Text>
+          <View style={{ width: 20, height: 20, borderRadius: 10, backgroundColor: '#FFD700' }} />
           <View style={{ flex: 1 }}>
             <Text style={{ fontSize: 13, color: '#FFD700', fontWeight: 'bold' }}>コインの貯め方</Text>
             <Text style={{ fontSize: 11, color: '#aaa', marginTop: 2 }}>スコア÷100枚 + 合体ボーナス2枚/回。毎日プレイで積み上げよう！</Text>
@@ -109,11 +109,11 @@ export default function ShopScreen() {
                   <Text style={styles.shopCardName}>{skin.name}</Text>
                   <Text style={styles.shopCardDesc}>{skin.description}</Text>
                   <View style={{ flexDirection:'row', flexWrap:'wrap', gap:4, marginTop:4 }}>
-                    {skin.id === 'scottish' && <Text style={tagStyle}>🔇 静かな着地</Text>}
-                    {skin.id === 'siamese' && <Text style={tagStyle}>💨 スリムな体型</Text>}
-                    {skin.id === 'munchkin' && <Text style={tagStyle}>🪨 低重心・安定</Text>}
-                    {skin.id === 'bengal' && <Text style={tagStyle}>⚡ アクティブ</Text>}
-                    {skin.id === 'ragdoll' && <Text style={tagStyle}>🧸 おっとり系</Text>}
+                    {skin.id === 'scottish' && <Text style={tagStyle}>静かな着地</Text>}
+                    {skin.id === 'siamese' && <Text style={tagStyle}>スリムな体型</Text>}
+                    {skin.id === 'munchkin' && <Text style={tagStyle}>低重心・安定</Text>}
+                    {skin.id === 'bengal' && <Text style={tagStyle}>アクティブ</Text>}
+                    {skin.id === 'ragdoll' && <Text style={tagStyle}>おっとり系</Text>}
                   </View>
                 </View>
               </View>
@@ -126,7 +126,7 @@ export default function ShopScreen() {
                   style={styles.buyButton}
                   onPress={() => handleBuySkin(skin.id, price)}
                 >
-                  <Text style={styles.buyButtonText}>🪙 {price} で購入</Text>
+                  <Text style={styles.buyButtonText}>COIN {price} で購入</Text>
                 </TouchableOpacity>
               )}
             </View>
@@ -145,7 +145,7 @@ export default function ShopScreen() {
           borderColor: 'rgba(255,215,0,0.4)',
         }}>
           <Text style={{ fontSize: 13, color: '#FFD700', textAlign: 'center', fontWeight: 'bold' }}>
-            🎮 ゲームプレイでコインを貯めてスキンを解放！
+            PLAY ゲームプレイでコインを貯めてスキンを解放！
           </Text>
           <Text style={{ fontSize: 12, color: '#aaa', textAlign: 'center', marginTop: 4 }}>
             スコア×÷100 + 合体×2枚 獲得。コンティニューも使えます

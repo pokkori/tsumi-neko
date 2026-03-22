@@ -178,7 +178,7 @@ export async function generateShareImage(params: {
 
     // Highest evolution cat drawing (右側に大きく表示)
     if (params.maxEvolution) {
-      const catEmoji = CAT_EMOJI[params.maxEvolution as CatShapeId] ?? '🐱';
+      const catEmoji = CAT_EMOJI[params.maxEvolution as CatShapeId] ?? 'CAT';
       const evolutionName = CAT_SHAPES.find(c => c.id === params.maxEvolution)?.name ?? params.maxEvolution;
       // Evolution stage badge
       ctx.fillStyle = 'rgba(255,255,255,0.12)';

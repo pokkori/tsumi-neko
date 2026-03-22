@@ -15,18 +15,18 @@ export const EVOLUTION_MAP: Record<CatShapeId, CatShapeId | null> = {
   chunky: null, // Max level - no further evolution
 };
 
-// Emoji representation for each cat shape (for Wordle-style share)
+// Shape name representation for each cat shape (for share text)
 export const CAT_EMOJI: Record<CatShapeId, string> = {
-  tiny: "🐱",
-  round: "😺",
-  long: "😸",
-  flat: "😼",
-  loaf: "🍞",
-  triangle: "😻",
-  curled: "😽",
-  fat: "🙀",
-  stretchy: "😹",
-  chunky: "👑",
+  tiny: "TINY",
+  round: "ROUND",
+  long: "LONG",
+  flat: "FLAT",
+  loaf: "LOAF",
+  triangle: "TRI",
+  curled: "CURL",
+  fat: "FAT",
+  stretchy: "STRETCH",
+  chunky: "CHUNKY",
 };
 
 export const CAT_SHAPES: CatShape[] = [

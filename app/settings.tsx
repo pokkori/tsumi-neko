@@ -54,7 +54,7 @@ export default function SettingsScreen() {
         <TouchableOpacity onPress={() => router.back()}>
           <Text style={styles.backButton}>← 戻る</Text>
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>⚙ 設定</Text>
+        <Text style={styles.headerTitle}>SET 設定</Text>
         <View style={{ width: 60 }} />
       </View>
 

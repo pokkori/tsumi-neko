@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -8,12 +8,16 @@ import {
   SafeAreaView,
 } from "react-native";
 import { useRouter } from "expo-router";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useGameStore } from "../src/stores/gameStore";
 import { useDailyChallenge } from "../src/hooks/useDailyChallenge";
 import { DailyBadge } from "../src/components/DailyBadge";
 import { formatScore, formatHeight } from "../src/utils/format";
 import { COLORS } from "../src/constants/colors";
 import { CatTowerSVG } from "../src/components/CatTowerSVG";
+
+const STREAK_KEY = "streak_days";
+const STREAK_DATE_KEY = "streak_last_date";
 
 export default function TitleScreen() {
   const router = useRouter();
@@ -23,6 +27,7 @@ export default function TitleScreen() {
   const achievements = useGameStore((s) => s.achievements);
   const hasChunky = achievements?.shapesUsed?.includes("chunky") ?? false;
   const { isCompleted } = useDailyChallenge();
+  const [streakDays, setStreakDays] = useState<number>(0);
 
   const EVOLUTION_ORDER = ["tiny","round","long","flat","loaf","triangle","curled","fat","stretchy","chunky"];
   const maxEvolutionIndex = achievements?.shapesUsed
@@ -34,6 +39,40 @@ export default function TitleScreen() {
 
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const catBounce = useRef(new Animated.Value(0)).current;
+
+  // N-R25-10: ストリーク連続プレイ
+  useEffect(() => {
+    (async () => {
+      try {
+        const today = new Date().toISOString().split("T")[0];
+        const lastDate = await AsyncStorage.getItem(STREAK_DATE_KEY);
+        const storedStreak = await AsyncStorage.getItem(STREAK_KEY);
+        let streak = storedStreak ? parseInt(storedStreak, 10) : 0;
+
+        if (lastDate === today) {
+          // Already played today, keep streak
+        } else if (lastDate) {
+          const last = new Date(lastDate);
+          const now = new Date(today);
+          const diffDays = Math.floor((now.getTime() - last.getTime()) / 86400000);
+          if (diffDays === 1) {
+            streak += 1;
+          } else {
+            streak = 1;
+          }
+          await AsyncStorage.setItem(STREAK_KEY, String(streak));
+          await AsyncStorage.setItem(STREAK_DATE_KEY, today);
+        } else {
+          streak = 1;
+          await AsyncStorage.setItem(STREAK_KEY, String(streak));
+          await AsyncStorage.setItem(STREAK_DATE_KEY, today);
+        }
+        setStreakDays(streak);
+      } catch {
+        // ignore
+      }
+    })();
+  }, []);
 
   useEffect(() => {
     // Pulse animation for play button
@@ -154,6 +193,13 @@ export default function TitleScreen() {
           </View>
         )}
       </View>
+
+      {/* N-R25-10: Streak Display */}
+      {streakDays >= 1 && (
+        <View style={styles.streakDisplay}>
+          <Text style={styles.streakDisplayText}>STREAK: {streakDays}DAY</Text>
+        </View>
+      )}
 
       {/* Coin Balance */}
       <TouchableOpacity onPress={() => router.push('/shop')} style={{ marginTop: 8, flexDirection: 'row', alignItems: 'center', gap: 4 }}>
@@ -287,6 +333,21 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: "bold",
     color: "#FFA500",
+  },
+  streakDisplay: {
+    marginTop: 8,
+    backgroundColor: "rgba(255, 140, 0, 0.2)",
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 5,
+    borderWidth: 1,
+    borderColor: "rgba(255, 140, 0, 0.5)",
+  },
+  streakDisplayText: {
+    fontSize: 13,
+    fontWeight: "bold",
+    color: "#FF8C00",
+    letterSpacing: 1,
   },
   footer: {
     flexDirection: "row",
