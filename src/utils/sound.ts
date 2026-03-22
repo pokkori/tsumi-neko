@@ -1,7 +1,11 @@
 import { Platform } from 'react-native';
+import {
+  hapticsLight, hapticsMedium, hapticsHeavy, hapticsError,
+  hapticsCombo, hapticsMerge, hapticsMergeLarge, hapticsCollapse,
+} from './haptics';
 
 // Web Audio API sound engine - only works on web platform
-// On native, haptics are used instead (no sound)
+// On native, haptics are used as SE replacement
 
 let audioContext: AudioContext | null = null;
 
@@ -152,11 +156,16 @@ function playNote(freq: number, startTime: number, duration: number, type: Oscil
 
 /** Drop sound: soft thud (100Hz sine, 100ms) */
 export function playDropSound() {
+  if (Platform.OS !== 'web') { hapticsLight(); return; }
   playTone(100, 100, 'sine', 0.6);
 }
 
 /** Merge sound: pitch-shifted "purin" bouncy sound with reverb */
 export function playMergeSound(evolutionIndex: number) {
+  if (Platform.OS !== 'web') {
+    if (evolutionIndex >= 6) hapticsMergeLarge(); else hapticsMerge();
+    return;
+  }
   if (!seEnabled) return;
   const ctx = getAudioContext();
   if (!ctx) return;
@@ -224,6 +233,7 @@ export function playMergeSound(evolutionIndex: number) {
 
 /** Landing sound: soft "posu" with lowpass filter (BiquadFilterNode) */
 export function playLandSound() {
+  if (Platform.OS !== 'web') { hapticsLight(); return; }
   if (!seEnabled) return;
   const ctx = getAudioContext();
   if (!ctx) return;
@@ -258,6 +268,7 @@ export function playLandSound() {
 
 /** Combo sound: rising pitch based on combo count */
 export function playComboSound(comboCount: number) {
+  if (Platform.OS !== 'web') { hapticsCombo(); return; }
   const basePitch = 600 + (comboCount - 1) * 100;
   const endPitch = basePitch + 300;
   playTone(basePitch, 120, 'sine', 0.8, endPitch);
@@ -265,11 +276,13 @@ export function playComboSound(comboCount: number) {
 
 /** Game over: descending tone */
 export function playGameOverSound() {
+  if (Platform.OS !== 'web') { hapticsError(); return; }
   playTone(600, 400, 'sawtooth', 0.5, 150);
 }
 
 /** Collapse sound: rumble effect */
 export function playCollapseSound() {
+  if (Platform.OS !== 'web') { hapticsCollapse(); return; }
   if (!seEnabled) return;
   const ctx = getAudioContext();
   if (!ctx) return;
