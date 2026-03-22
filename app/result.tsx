@@ -15,7 +15,7 @@ import { shareResult, generateEmojiGrid, generateShareImage } from "../src/utils
 import { loadData } from "../src/utils/storage";
 import { COLORS } from "../src/constants/colors";
 import { CatShapeId } from "../src/types";
-import { CAT_EMOJI, CAT_SHAPES } from "../src/data/catShapes";
+import { CAT_SHAPES } from "../src/data/catShapes";
 import { useGameStore } from "../src/stores/gameStore";
 
 export default function ResultScreen() {
@@ -61,6 +61,16 @@ export default function ResultScreen() {
   const gameRank = GAME_RANK_THRESHOLDS.find(r => score >= r.threshold) ?? GAME_RANK_THRESHOLDS[3];
 
   // maxEvolutionをshapesUsedから即座に計算（useEffectより前で確定させる）
+  const EVOLUTION_NAMES: Record<string, string> = {
+    tiny: "ちびネコ", round: "まんまるネコ", long: "ながながネコ",
+    flat: "ぺたんこネコ", loaf: "食パンネコ", triangle: "おすわりネコ",
+    curled: "まるまりネコ", fat: "でぶネコ", stretchy: "のびのびネコ",
+    chunky: "ずんぐりネコ",
+  };
+  const EVOLUTION_LV: Record<string, number> = {
+    tiny: 1, round: 2, long: 3, flat: 4, loaf: 5,
+    triangle: 6, curled: 7, fat: 8, stretchy: 9, chunky: 10,
+  };
   const maxEvolution: string = (() => {
     if (shapesUsed.length === 0) return "";
     const evolutionOrder = CAT_SHAPES.map((s) => s.id);
@@ -73,15 +83,18 @@ export default function ResultScreen() {
         maxShapeId = shapeId;
       }
     }
-    return maxShapeId ? (CAT_EMOJI[maxShapeId] || "") : "";
+    // shapeId文字列を返す（絵文字は使用しない）
+    return maxShapeId ?? "";
   })();
 
   const [currentStreak, setCurrentStreak] = useState<number>(0);
   const [previewDataUrl, setPreviewDataUrl] = useState<string | null>(null);
   const [skinUnlockMessage, setSkinUnlockMessage] = useState<string | null>(null);
 
-  // 今回解禁された最高進化ランクのバッジ表示（useEffectより前で確定させる）
-  const evolutionBadge = maxEvolution ? `最高進化 ${maxEvolution} 解禁！` : null;
+  // 今回解禁された最高進化ランクのバッジ表示（絵文字不使用）
+  const evolutionBadge = maxEvolution
+    ? `最高進化 Lv${EVOLUTION_LV[maxEvolution] ?? "?"} ${EVOLUTION_NAMES[maxEvolution] ?? maxEvolution} 解禁！`
+    : null;
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(0.8)).current;

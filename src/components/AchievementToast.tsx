@@ -46,7 +46,7 @@ export const AchievementToast: React.FC<AchievementToastProps> = ({ achievement 
         <Text style={styles.title}>実績解除!</Text>
       </View>
       <Text style={styles.name}>
-        {achievement.icon} {achievement.name}
+        {achievement.name}
       </Text>
       <View style={{flexDirection:'row', alignItems:'center', gap:4, justifyContent:'center'}}>
         <Text style={styles.reward}>+{achievement.rewardCoins}</Text>
