@@ -50,112 +50,87 @@ export function setBGMEnabled(enabled: boolean) {
 // C-Am-F-G chord progression loop, 120BPM, 4 bars
 // 3-4 OscillatorNodes, triangle + sine waves
 
-let bgmOscillators: OscillatorNode[] = [];
-let bgmGains: GainNode[] = [];
 let bgmIntervalId: ReturnType<typeof setTimeout> | null = null;
-let bgmPlaying = false;
+let bgmGainNode: GainNode | null = null;
 
-// Chord frequencies (C-Am-F-G progression)
-const CHORD_PROGRESSION = [
-  // C major: C4, E4, G4
-  [261.63, 329.63, 392.00],
-  // Am: A3, C4, E4
-  [220.00, 261.63, 329.63],
-  // F major: F3, A3, C4
-  [174.61, 220.00, 261.63],
-  // G major: G3, B3, D4
-  [196.00, 246.94, 293.66],
-];
-
-// 120BPM = 0.5s per beat, 4 beats per bar
-const BEAT_DURATION = 0.5; // seconds
-const BAR_DURATION = BEAT_DURATION * 4; // 2 seconds per bar
-
-export function playBGM(): void {
-  if (!bgmEnabled || bgmPlaying) return;
+export function playBGM(mode: 'normal' | 'fever' = 'normal'): void {
+  if (!bgmEnabled) return;
+  stopBGM();
   const ctx = getAudioContext();
   if (!ctx) return;
 
-  bgmPlaying = true;
-  let chordIndex = 0;
+  const gain = ctx.createGain();
+  gain.gain.value = bgmVolume;
+  gain.connect(ctx.destination);
+  bgmGainNode = gain;
 
-  const playChord = () => {
-    if (!bgmPlaying) return;
-    const ctx = getAudioContext();
-    if (!ctx) return;
+  const bpm = mode === 'fever' ? 140 : 96;
+  const beat8th = (60 / bpm) / 2;
 
-    // Clean up previous oscillators
-    stopBGMOscillators();
+  const CHORD_PROGRESSION = [
+    [261.63, 329.63, 392.00],
+    [220.00, 261.63, 329.63],
+    [174.61, 220.00, 261.63],
+    [196.00, 246.94, 293.66],
+  ];
+  const BASS_NOTES = [130.81, 110.00, 87.31, 98.00];
+  const MELODY = mode === 'fever'
+    ? [1047, 988, 880, 988, 1047, 1047, 1047, 988, 880, 988, 1047, 988, 880, 784, 880, 1047]
+    : [523, 494, 440, 494, 523, 523, 523, 494, 440, 494, 523, 494, 440, 392, 440, 523];
 
-    const chord = CHORD_PROGRESSION[chordIndex % CHORD_PROGRESSION.length];
-    const now = ctx.currentTime;
+  let step = 0;
 
-    // Create 3-4 oscillators per chord
-    // Oscillator 1-3: chord tones (triangle wave)
-    for (let i = 0; i < chord.length; i++) {
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
+  const tick = () => {
+    const ctx2 = getAudioContext();
+    if (!ctx2 || !bgmGainNode) return;
+    const t = ctx2.currentTime;
+    const beat8 = step % 8;
+    const chordIndex = Math.floor(step / 8) % 4;
+    const chord = CHORD_PROGRESSION[chordIndex];
 
-      osc.type = 'triangle';
-      osc.frequency.setValueAtTime(chord[i], now);
-
-      const vol = bgmVolume * 0.08;
-      gain.gain.setValueAtTime(vol, now);
-      // Gentle envelope: attack 0.05s, sustain, release at end
-      gain.gain.linearRampToValueAtTime(vol, now + BAR_DURATION * 0.8);
-      gain.gain.linearRampToValueAtTime(vol * 0.3, now + BAR_DURATION);
-
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-
-      osc.start(now);
-      osc.stop(now + BAR_DURATION + 0.1);
-
-      bgmOscillators.push(osc);
-      bgmGains.push(gain);
+    if (beat8 === 0) {
+      chord.forEach(freq => {
+        const osc = ctx2.createOscillator(); const g = ctx2.createGain();
+        osc.type = 'triangle'; osc.frequency.setValueAtTime(freq, t);
+        g.gain.setValueAtTime(bgmVolume * 0.07, t);
+        g.gain.exponentialRampToValueAtTime(0.001, t + beat8th * 8);
+        osc.connect(g); g.connect(ctx2.destination); osc.start(t); osc.stop(t + beat8th * 8.1);
+      });
+      const bOsc = ctx2.createOscillator(); const bGain = ctx2.createGain();
+      bOsc.type = 'sine'; bOsc.frequency.setValueAtTime(BASS_NOTES[chordIndex], t);
+      bGain.gain.setValueAtTime(bgmVolume * 0.09, t);
+      bGain.gain.exponentialRampToValueAtTime(0.001, t + beat8th * 7);
+      bOsc.connect(bGain); bGain.connect(ctx2.destination); bOsc.start(t); bOsc.stop(t + beat8th * 8);
     }
 
-    // Oscillator 4: bass note (sine wave, one octave lower)
-    const bassOsc = ctx.createOscillator();
-    const bassGain = ctx.createGain();
-    bassOsc.type = 'sine';
-    bassOsc.frequency.setValueAtTime(chord[0] / 2, now);
+    const mOsc = ctx2.createOscillator(); const mGain = ctx2.createGain();
+    mOsc.type = 'sine'; mOsc.frequency.setValueAtTime(MELODY[step % MELODY.length], t);
+    mGain.gain.setValueAtTime(0, t); mGain.gain.linearRampToValueAtTime(bgmVolume * 0.11, t + 0.02);
+    mGain.gain.exponentialRampToValueAtTime(0.001, t + beat8th * 0.85);
+    mOsc.connect(mGain); mGain.connect(ctx2.destination); mOsc.start(t); mOsc.stop(t + beat8th);
 
-    const bassVol = bgmVolume * 0.06;
-    bassGain.gain.setValueAtTime(bassVol, now);
-    bassGain.gain.linearRampToValueAtTime(bassVol * 0.2, now + BAR_DURATION);
+    const tOsc = ctx2.createOscillator(); const tGain = ctx2.createGain();
+    tOsc.type = 'triangle'; tOsc.frequency.setValueAtTime(MELODY[step % MELODY.length] * 2, t);
+    tGain.gain.setValueAtTime(bgmVolume * 0.02, t);
+    tGain.gain.exponentialRampToValueAtTime(0.001, t + beat8th * 0.4);
+    tOsc.connect(tGain); tGain.connect(ctx2.destination); tOsc.start(t); tOsc.stop(t + beat8th * 0.4);
 
-    bassOsc.connect(bassGain);
-    bassGain.connect(ctx.destination);
-    bassOsc.start(now);
-    bassOsc.stop(now + BAR_DURATION + 0.1);
-
-    bgmOscillators.push(bassOsc);
-    bgmGains.push(bassGain);
-
-    chordIndex++;
+    step++;
   };
 
-  // Start immediately and loop every bar
-  playChord();
-  bgmIntervalId = setInterval(playChord, BAR_DURATION * 1000);
-}
-
-function stopBGMOscillators(): void {
-  for (const osc of bgmOscillators) {
-    try { osc.stop(); } catch {}
-  }
-  bgmOscillators = [];
-  bgmGains = [];
+  tick();
+  bgmIntervalId = setInterval(tick, beat8th * 1000);
 }
 
 export function stopBGM(): void {
-  bgmPlaying = false;
   if (bgmIntervalId !== null) {
     clearInterval(bgmIntervalId);
     bgmIntervalId = null;
   }
-  stopBGMOscillators();
+  if (bgmGainNode) {
+    try { bgmGainNode.disconnect(); } catch {}
+    bgmGainNode = null;
+  }
 }
 
 // ---- Sound generation helpers ----

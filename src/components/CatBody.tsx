@@ -487,22 +487,36 @@ const ViewBasedCatBody: React.FC<CatBodyProps> = ({ cat, cameraY }) => {
 // ============= Expression =============
 
 const ExpressionIndicator: React.FC<{ expression: FaceExpression; stage: number }> = ({ expression, stage }) => {
-  const marks: Record<FaceExpression, string> = {
-    normal: "",
-    scared: "\u{1F4A7}",
-    sleeping: "Zzz",
-    angry: "\u{1F4A2}",
-    shocked: "\u{2757}",
-    love: "\u{1F495}",
-    dizzy: "\u{1F4AB}",
-  };
-  const mark = marks[expression];
-  if (!mark) return null;
-
-  const fontSize = 8 + Math.min(stage, 5) * 1;
-
+  const sz = 8 + Math.min(stage, 5);
+  if (expression === 'normal') return null;
   return (
-    <Text style={[styles.markText, { fontSize }]}>{mark}</Text>
+    <Svg width={sz + 4} height={sz + 4} viewBox="0 0 20 20" style={{ overflow: 'visible' }}>
+      {expression === 'scared' && (
+        <Path d="M10,2 Q14,8 14,12 Q14,17 10,17 Q6,17 6,12 Q6,8 10,2 Z" fill="#88CCFF" opacity="0.9"/>
+      )}
+      {expression === 'sleeping' && (
+        <>
+          <Path d="M4,14 L10,14 L4,8 L10,8" stroke="#AAAAFF" strokeWidth="1.8" fill="none" strokeLinecap="round"/>
+          <Path d="M8,10 L12,10 L8,6 L12,6" stroke="#AAAAFF" strokeWidth="1.5" fill="none" strokeLinecap="round"/>
+        </>
+      )}
+      {expression === 'angry' && (
+        <>
+          <Path d="M10,4 L10,9" stroke="#FF4444" strokeWidth="2" strokeLinecap="round"/>
+          <Path d="M7.5,6.5 L12.5,6.5" stroke="#FF4444" strokeWidth="2" strokeLinecap="round"/>
+          <Circle cx="10" cy="13" r="3" fill="#FF4444" opacity="0.6"/>
+        </>
+      )}
+      {expression === 'shocked' && (
+        <Path d="M10,3 L10,12 M10,15 L10,17" stroke="#FFFF00" strokeWidth="2.5" strokeLinecap="round"/>
+      )}
+      {expression === 'love' && (
+        <Path d="M10,16 Q4,11 4,7 Q4,3 8,3 Q10,5 10,5 Q10,5 12,3 Q16,3 16,7 Q16,11 10,16 Z" fill="#FF88AA"/>
+      )}
+      {expression === 'dizzy' && (
+        <Path d="M10,10 Q14,6 14,10 Q14,14 10,14 Q6,14 6,10 Q6,6 10,6" stroke="#FFAA44" strokeWidth="1.5" fill="none"/>
+      )}
+    </Svg>
   );
 };
 
@@ -540,9 +554,6 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: -16,
     right: -8,
-  },
-  markText: {
-    fontSize: 10,
   },
   earLeft: {
     position: "absolute",

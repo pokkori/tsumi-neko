@@ -1,5 +1,6 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
+import Svg, { Ellipse, Path, Rect } from "react-native-svg";
 import { formatScore, formatHeight } from "../utils/format";
 
 interface ScoreDisplayProps {
@@ -30,7 +31,16 @@ export const ScoreDisplay: React.FC<ScoreDisplayProps> = ({
     <View style={styles.container}>
       <View style={styles.row}>
         <Text style={styles.label}>Score: {formatScore(score)}</Text>
-        <Text style={styles.label}>🐱x{catCount}</Text>
+        <View style={{flexDirection:'row', alignItems:'center', gap:3}}>
+          <Svg width={14} height={14} viewBox="0 0 60 60">
+            <Path d="M16,18 L10,6 L22,14 Z" fill="#FF6644"/>
+            <Path d="M44,18 L50,6 L38,14 Z" fill="#FF6644"/>
+            <Ellipse cx="30" cy="34" rx="20" ry="18" fill="#FF9966"/>
+            <Ellipse cx="22" cy="29" rx="3" ry="3.5" fill="#1a1a2e"/>
+            <Ellipse cx="38" cy="29" rx="3" ry="3.5" fill="#1a1a2e"/>
+          </Svg>
+          <Text style={styles.label}>x{catCount}</Text>
+        </View>
       </View>
       <View style={styles.row}>
         <Text style={styles.label}>Height: {formatHeight(height)}</Text>
@@ -42,7 +52,15 @@ export const ScoreDisplay: React.FC<ScoreDisplayProps> = ({
       </View>
       <View style={styles.row}>
         {isNewRecord ? (
-          <Text style={[styles.bestLabel, { color: "#FFD700" }]}>🏆 NEW RECORD!</Text>
+          <View style={{flexDirection:'row', alignItems:'center', gap:4}}>
+            <Svg width={14} height={14} viewBox="0 0 28 28">
+              <Path d="M5,2 L23,2 L23,14 Q23,22 14,24 Q5,22 5,14 Z" stroke="#ffd700" strokeWidth="1.5" fill="rgba(255,215,0,0.2)"/>
+              <Path d="M5,7 L2,7 L2,12 Q2,16 5,16" stroke="#ffd700" strokeWidth="1.5" fill="none"/>
+              <Path d="M23,7 L26,7 L26,12 Q26,16 23,16" stroke="#ffd700" strokeWidth="1.5" fill="none"/>
+              <Rect x="10" y="22" width="8" height="4" rx="1" fill="#ffd700"/>
+            </Svg>
+            <Text style={[styles.bestLabel, { color: "#FFD700" }]}>NEW RECORD!</Text>
+          </View>
         ) : (
           <Text style={styles.bestLabel}>Best: {formatScore(bestScore)}</Text>
         )}

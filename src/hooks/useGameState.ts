@@ -22,6 +22,8 @@ import {
   playCollapseSound,
   playGameOverSound,
   resumeAudioContext,
+  playBGM,
+  stopBGM,
 } from "../utils/sound";
 
 export function useGameState(skinId: SkinId = "mike", forceShapeId?: CatShapeId, challengeConfig?: ChallengeConfig) {
@@ -41,6 +43,7 @@ export function useGameState(skinId: SkinId = "mike", forceShapeId?: CatShapeId,
 
     // Resume audio context on game start (requires user gesture)
     resumeAudioContext();
+    playBGM('normal');
 
     // Set up haptic + sound callbacks
     loop.onCatDropped = () => {
@@ -115,6 +118,7 @@ export function useGameState(skinId: SkinId = "mike", forceShapeId?: CatShapeId,
   }, [isRunning]);
 
   const handleGameOver = async (state: GameState) => {
+    stopBGM();
     playGameOverSound();
     const result = await updateStats({
       score: state.score,
@@ -193,6 +197,7 @@ export function useGameState(skinId: SkinId = "mike", forceShapeId?: CatShapeId,
     return () => {
       if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
       gameLoopRef.current?.destroy();
+      stopBGM();
     };
   }, []);
 
