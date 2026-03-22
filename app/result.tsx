@@ -88,6 +88,7 @@ export default function ResultScreen() {
   })();
 
   const [currentStreak, setCurrentStreak] = useState<number>(0);
+  const [bestScore, setBestScore] = useState<number>(0);
   const [previewDataUrl, setPreviewDataUrl] = useState<string | null>(null);
   const [skinUnlockMessage, setSkinUnlockMessage] = useState<string | null>(null);
 
@@ -104,6 +105,7 @@ export default function ResultScreen() {
   useEffect(() => {
     loadData("@tsumineko/stats").then((stats) => {
       setCurrentStreak(stats.currentStreak);
+      setBestScore(stats.bestScore ?? 0);
     });
   }, []);
 
@@ -214,6 +216,22 @@ export default function ResultScreen() {
           }}>
             <Text style={{ color: "#FFFFFF", fontSize: 16, fontWeight: "bold", textAlign: "center" }}>
               デイリーチャレンジ クリア！
+            </Text>
+          </View>
+        )}
+
+        {/* ニアミス表示 */}
+        {!isNewRecord && bestScore > 0 && score < bestScore && (
+          <View style={{ backgroundColor: 'rgba(255,215,0,0.12)', borderRadius: 10, paddingHorizontal: 16, paddingVertical: 8, marginBottom: 10, borderWidth: 1, borderColor: 'rgba(255,215,0,0.4)' }}>
+            <Text style={{ color: '#FFD700', fontSize: 13, fontWeight: 'bold', textAlign: 'center' }}>
+              あと {formatScore(bestScore - score)} 点で自己ベスト更新！
+            </Text>
+          </View>
+        )}
+        {!isNewRecord && toNext !== null && toNext > 0 && (
+          <View style={{ backgroundColor: 'rgba(150,200,255,0.1)', borderRadius: 10, paddingHorizontal: 16, paddingVertical: 6, marginBottom: 10, borderWidth: 1, borderColor: 'rgba(100,180,255,0.3)' }}>
+            <Text style={{ color: '#90CAF9', fontSize: 12, textAlign: 'center' }}>
+              あと {formatScore(toNext)} 点でランク{gameRank.rank === 'C' ? 'B' : gameRank.rank === 'B' ? 'B+' : gameRank.rank === 'B+' ? 'A' : gameRank.rank === 'A' ? 'A+' : 'S'} 到達！
             </Text>
           </View>
         )}
