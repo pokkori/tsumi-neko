@@ -180,6 +180,11 @@ export function useGameState(skinId: SkinId = "mike", forceShapeId?: CatShapeId,
   const continueFromReward = useCallback(() => {
     if (gameLoopRef.current) {
       gameLoopRef.current.continueFromReward();
+      // フェーズを強制的にidleに戻す（gameover判定ループの防止）
+      if (gameLoopRef.current.state) {
+        gameLoopRef.current.state.phase = "idle";
+        setGameState({ ...gameLoopRef.current.state });
+      }
       setIsRunning(true);
     }
   }, []);

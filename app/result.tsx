@@ -275,7 +275,9 @@ export default function ResultScreen() {
           style={styles.shareButton}
           onPress={handleShare}
         >
-          <Text style={styles.buttonText}>シェアする</Text>
+          <Text style={styles.buttonText}>
+            {previewDataUrl ? "📸 画像付きシェア" : "📢 シェアする"}
+          </Text>
         </TouchableOpacity>
 
         <TouchableOpacity

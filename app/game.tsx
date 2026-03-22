@@ -7,6 +7,7 @@ import {
   Modal,
   SafeAreaView,
   PanResponder,
+  Alert,
 } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useGameState } from "../src/hooks/useGameState";
@@ -61,6 +62,7 @@ export default function GameScreen() {
   const [showChunkyBorn, setShowChunkyBorn] = useState(false);
   const [showChunkyShare, setShowChunkyShare] = useState(false);
   const [showContinueModal, setShowContinueModal] = useState(false);
+  const [continueUsed, setContinueUsed] = useState(false);
   const pendingResultParams = useRef<Record<string, string> | null>(null);
 
   // PanResponder for drag control
@@ -110,6 +112,7 @@ export default function GameScreen() {
       await AsyncStorage.setItem(TUTORIAL_KEY, "true");
     } catch {}
     startGame();
+    setContinueUsed(false);
     setStarted(true);
   }, [startGame]);
 
@@ -349,15 +352,35 @@ export default function GameScreen() {
               <Text style={{ fontSize: 15, color: "#666", textAlign: "center", marginBottom: 8 }}>
                 コンティニューしますか？
               </Text>
-              <TouchableOpacity
-                style={[styles.pauseMenuButton, { backgroundColor: "#FF6B35" }]}
-                onPress={() => {
-                  setShowContinueModal(false);
-                  continueFromReward();
-                }}
-              >
-                <Text style={styles.pauseMenuButtonText}>🐱 続ける（広告）</Text>
-              </TouchableOpacity>
+              {!continueUsed ? (
+                <>
+                  <TouchableOpacity
+                    style={[styles.pauseMenuButton, { backgroundColor: "#FF6B35" }]}
+                    onPress={async () => {
+                      const state = useGameStore.getState();
+                      const CONTINUE_COST = 100;
+                      const coins = state.wallet?.coins ?? 0;
+                      if (coins >= CONTINUE_COST) {
+                        await state.spendCoins(CONTINUE_COST);
+                        setContinueUsed(true);
+                        setShowContinueModal(false);
+                        continueFromReward();
+                      } else {
+                        Alert.alert("コイン不足", `コンティニューには🪙${CONTINUE_COST}枚必要です\n（現在: ${coins}枚）`);
+                      }
+                    }}
+                  >
+                    <Text style={styles.pauseMenuButtonText}>🪙 コイン100枚で続ける</Text>
+                  </TouchableOpacity>
+                  <Text style={{ fontSize: 11, color: "#999", marginTop: 4, textAlign: "center" }}>
+                    コインはゲームプレイで獲得できます
+                  </Text>
+                </>
+              ) : (
+                <View style={[styles.pauseMenuButton, { backgroundColor: "#ccc" }]}>
+                  <Text style={styles.pauseMenuButtonText}>使用済み</Text>
+                </View>
+              )}
               <TouchableOpacity
                 style={{ marginTop: 16 }}
                 onPress={() => {

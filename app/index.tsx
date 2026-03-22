@@ -22,6 +22,14 @@ export default function TitleScreen() {
   const hasChunky = achievements?.shapesUsed?.includes("chunky") ?? false;
   const { isCompleted } = useDailyChallenge();
 
+  const EVOLUTION_ORDER = ["tiny","round","long","flat","loaf","triangle","curled","fat","stretchy","chunky"];
+  const maxEvolutionIndex = achievements?.shapesUsed
+    ? Math.max(-1, ...achievements.shapesUsed.map((s: string) => EVOLUTION_ORDER.indexOf(s)))
+    : -1;
+  const stepsToChunky = maxEvolutionIndex >= 0
+    ? (EVOLUTION_ORDER.length - 1 - maxEvolutionIndex)
+    : EVOLUTION_ORDER.length - 1;
+
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const catBounce = useRef(new Animated.Value(0)).current;
 
@@ -129,6 +137,17 @@ export default function TitleScreen() {
           }}>
             <Text style={{ fontSize: 14, fontWeight: "bold", color: "#FFD700" }}>
               👑 ずんぐりネコ達成済み！
+            </Text>
+          </View>
+        )}
+        {!hasChunky && maxEvolutionIndex >= 0 && (
+          <View style={{
+            marginTop: 8, backgroundColor: "rgba(255,165,0,0.15)",
+            borderRadius: 16, paddingHorizontal: 16, paddingVertical: 6,
+            borderWidth: 1, borderColor: "rgba(255,165,0,0.4)",
+          }}>
+            <Text style={{ fontSize: 13, color: "#FFA500", textAlign: "center" }}>
+              🐾 ずんぐりネコまであと{stepsToChunky}段階の進化！
             </Text>
           </View>
         )}
