@@ -34,18 +34,20 @@ interface ParticleConfig {
   color: string;
   size: number;
   delay: number;
+  duration: number;
 }
 
-function generateParticles(count: number): ParticleConfig[] {
+function generateParticles(count: number, speedMultiplier: number = 1, durationMs: number = 500): ParticleConfig[] {
   const particles: ParticleConfig[] = [];
   for (let i = 0; i < count; i++) {
     const angle = (Math.PI * 2 * i) / count + (Math.random() - 0.5) * 0.5;
     particles.push({
       angle,
-      speed: 60 + Math.random() * 80,
+      speed: (72 + Math.random() * 96) * speedMultiplier,
       color: PARTICLE_COLORS[i % PARTICLE_COLORS.length],
       size: 6 + Math.random() * 6,
       delay: Math.random() * 50,
+      duration: durationMs,
     });
   }
   return particles;
@@ -73,26 +75,27 @@ const Particle: React.FC<{
     const destX = Math.cos(config.angle) * config.speed;
     const destY = Math.sin(config.angle) * config.speed;
 
+    const dur = config.duration;
     Animated.parallel([
       Animated.timing(translateX, {
         toValue: destX,
-        duration: 500,
+        duration: dur,
         useNativeDriver: true,
       }),
       Animated.timing(translateY, {
         toValue: destY,
-        duration: 500,
+        duration: dur,
         useNativeDriver: true,
       }),
       Animated.timing(opacity, {
         toValue: 0,
-        duration: 500,
-        delay: 100,
+        duration: dur,
+        delay: Math.floor(dur * 0.2),
         useNativeDriver: true,
       }),
       Animated.timing(scale, {
         toValue: 0.2,
-        duration: 500,
+        duration: dur,
         useNativeDriver: true,
       }),
     ]).start();
@@ -148,8 +151,11 @@ export const MergeEffect: React.FC<MergeEffectProps> = ({ mergeEvent, cameraY })
 
     const isChunky = mergeEvent.toShapeId === "chunky";
     const isLargeCat = mergeEvent.evolutionIndex >= 6;
-    const particleCount = isChunky ? 36 : isLargeCat ? 28 : 18;
-    setParticles(generateParticles(particleCount));
+    const particleCount = isChunky ? 50 : isLargeCat ? 35 : 28;
+    const speedMultiplier = isChunky ? 1.2 : 1.0;
+    // chunky: 400ms で早めに消してFPS維持、通常: 500ms
+    const durationMs = isChunky ? 400 : 500;
+    setParticles(generateParticles(particleCount, speedMultiplier, durationMs));
 
     // Reset all animations
     morphShrinkScale.setValue(1);
@@ -326,11 +332,11 @@ export const MergeEffect: React.FC<MergeEffectProps> = ({ mergeEvent, cameraY })
         style={[
           styles.bounceRing,
           {
-            left: isChunky ? eventX - 80 : isLargeCat ? eventX - 60 : eventX - 40,
-            top: isChunky ? eventY - 80 : isLargeCat ? eventY - 60 : eventY - 40,
-            width: isChunky ? 160 : isLargeCat ? 120 : 80,
-            height: isChunky ? 160 : isLargeCat ? 120 : 80,
-            borderRadius: isChunky ? 80 : isLargeCat ? 60 : 40,
+            left: isChunky ? eventX - 120 : isLargeCat ? eventX - 60 : eventX - 40,
+            top: isChunky ? eventY - 120 : isLargeCat ? eventY - 60 : eventY - 40,
+            width: isChunky ? 240 : isLargeCat ? 120 : 80,
+            height: isChunky ? 240 : isLargeCat ? 120 : 80,
+            borderRadius: isChunky ? 120 : isLargeCat ? 60 : 40,
             borderWidth: isChunky ? 5 : 3,
             borderColor: isChunky ? "rgba(255,215,0,1.0)" : isLargeCat ? "rgba(255,215,0,0.8)" : "rgba(255,215,0,0.6)",
             opacity: bounceOpacity,
