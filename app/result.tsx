@@ -278,14 +278,24 @@ export default function ResultScreen() {
               const reached = shapesUsed.includes(shape as CatShapeId);
               const isMax = idx === maxReachedIdx;
               return (
-                <View key={shape} style={{ alignItems: "center", flex: 1 }}>
+                <View key={shape} style={{ alignItems: "center", flex: 1 }}
+                  accessibilityLabel={`${evolutionLabels[idx]}${isMax ? ' 最高到達' : reached ? ' 解禁済み' : ' 未到達'}`}
+                  accessibilityRole="text"
+                >
                   <View style={{
-                    width: 20, height: 20, borderRadius: 10,
+                    width: 22, height: 22, borderRadius: 11,
                     backgroundColor: reached ? (isMax ? "#FFD700" : "#81C784") : "#333",
-                    borderWidth: isMax ? 2 : 0,
-                    borderColor: "#FFD700",
-                  }} />
-                  <Text style={{ fontSize: 6, color: reached ? "#fff" : "#555", marginTop: 2 }}>
+                    borderWidth: isMax ? 2 : reached ? 1 : 0,
+                    borderColor: isMax ? "#FFD700" : "#4CAF50",
+                    alignItems: "center", justifyContent: "center",
+                  }}>
+                    {isMax ? (
+                      <Text style={{ fontSize: 10, color: "#333", fontWeight: "bold" }}>★</Text>
+                    ) : reached ? (
+                      <Text style={{ fontSize: 9, color: "#fff", fontWeight: "bold" }}>✓</Text>
+                    ) : null}
+                  </View>
+                  <Text style={{ fontSize: 7, color: reached ? "#fff" : "#666", marginTop: 2, textAlign: "center" }}>
                     {evolutionLabels[idx]}
                   </Text>
                 </View>
