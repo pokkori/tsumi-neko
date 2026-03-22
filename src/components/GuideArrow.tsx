@@ -1,5 +1,6 @@
 import React from "react";
 import { View, StyleSheet } from "react-native";
+import { Svg, Line, Polygon } from "react-native-svg";
 
 interface GuideArrowProps {
   x: number;
@@ -16,18 +17,38 @@ export const GuideArrow: React.FC<GuideArrowProps> = ({
 }) => {
   if (!visible) return null;
 
+  const height = bottomY - topY;
+  const arrowSize = 8;
+
   return (
     <View
       style={[
         styles.container,
         {
-          left: x - 1,
+          left: x - arrowSize,
           top: topY,
-          height: bottomY - topY,
+          height,
+          width: arrowSize * 2,
         },
       ]}
     >
-      <View style={styles.line} />
+      <Svg width={arrowSize * 2} height={height}>
+        {/* Dashed vertical line */}
+        <Line
+          x1={arrowSize}
+          y1={0}
+          x2={arrowSize}
+          y2={height - arrowSize}
+          stroke="rgba(255,255,255,0.55)"
+          strokeWidth={2}
+          strokeDasharray="6,5"
+        />
+        {/* Arrowhead at bottom */}
+        <Polygon
+          points={`${arrowSize},${height} ${arrowSize - arrowSize},${height - arrowSize} ${arrowSize + arrowSize},${height - arrowSize}`}
+          fill="rgba(255,255,255,0.7)"
+        />
+      </Svg>
     </View>
   );
 };
@@ -35,13 +56,6 @@ export const GuideArrow: React.FC<GuideArrowProps> = ({
 const styles = StyleSheet.create({
   container: {
     position: "absolute",
-    width: 2,
     zIndex: 5,
-  },
-  line: {
-    flex: 1,
-    width: 2,
-    backgroundColor: "rgba(255,255,255,0.3)",
-    borderStyle: "dotted" as any,
   },
 });
