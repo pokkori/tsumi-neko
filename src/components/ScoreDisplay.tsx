@@ -1,12 +1,12 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
-import Svg, { Ellipse, Path, Rect } from "react-native-svg";
+import Svg, { Path, Rect } from "react-native-svg";
 import { formatScore, formatHeight } from "../utils/format";
 
 interface ScoreDisplayProps {
   score: number;
   height: number;
-  catCount: number;
+  catCount?: number;
   combo: number;
   bestScore?: number;
 }
@@ -30,25 +30,15 @@ export const ScoreDisplay: React.FC<ScoreDisplayProps> = ({
   return (
     <View style={styles.container}>
       <View style={styles.row}>
-        <Text style={styles.label}>Score: {formatScore(score)}</Text>
-        <View style={{flexDirection:'row', alignItems:'center', gap:3}}>
-          <Svg width={14} height={14} viewBox="0 0 60 60">
-            <Path d="M16,18 L10,6 L22,14 Z" fill="#FF6644"/>
-            <Path d="M44,18 L50,6 L38,14 Z" fill="#FF6644"/>
-            <Ellipse cx="30" cy="34" rx="20" ry="18" fill="#FF9966"/>
-            <Ellipse cx="22" cy="29" rx="3" ry="3.5" fill="#1a1a2e"/>
-            <Ellipse cx="38" cy="29" rx="3" ry="3.5" fill="#1a1a2e"/>
-          </Svg>
-          <Text style={styles.label}>x{catCount}</Text>
-        </View>
-      </View>
-      <View style={styles.row}>
-        <Text style={styles.label}>Height: {formatHeight(height)}</Text>
+        <Text style={[styles.label, { fontSize: 16 }]}>{formatScore(score)}</Text>
         {combo >= 2 && (
           <Text style={[styles.combo, { color: getComboColor(combo) }]}>
-            Combo: x{combo}
+            x{combo} Combo
           </Text>
         )}
+      </View>
+      <View style={styles.row}>
+        <Text style={[styles.label, { fontSize: 12, opacity: 0.8 }]}>↑ {formatHeight(height)}</Text>
       </View>
       <View style={styles.row}>
         {isNewRecord ? (
