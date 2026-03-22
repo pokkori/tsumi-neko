@@ -1,5 +1,5 @@
-import React from "react";
-import { View, Text, StyleSheet, Platform } from "react-native";
+import React, { useRef, useEffect } from "react";
+import { View, Text, StyleSheet, Platform, Animated, Easing } from "react-native";
 import { ActiveCat, FaceExpression, CatShapeId } from "../types";
 import { CAT_SHAPES } from "../data/catShapes";
 import { CAT_SKINS } from "../data/catSkins";
@@ -103,6 +103,21 @@ interface CatBodyProps {
 }
 
 export const CatBody: React.FC<CatBodyProps> = React.memo(({ cat, cameraY }) => {
+  const wobbleAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    const anim = Animated.loop(
+      Animated.sequence([
+        Animated.timing(wobbleAnim, { toValue: 1, duration: 1250, useNativeDriver: true, easing: Easing.inOut(Easing.sin) }),
+        Animated.timing(wobbleAnim, { toValue: -1, duration: 1250, useNativeDriver: true, easing: Easing.inOut(Easing.sin) }),
+      ])
+    );
+    anim.start();
+    return () => anim.stop();
+  }, []);
+
+  const wobbleRotate = wobbleAnim.interpolate({ inputRange: [-1, 1], outputRange: ['-3deg', '3deg'] });
+
   const shape = CAT_SHAPES.find((s) => s.id === cat.shapeId);
   const skin = CAT_SKINS.find((s) => s.id === cat.skinId);
   if (!shape || !skin) return null;
@@ -126,6 +141,7 @@ export const CatBody: React.FC<CatBodyProps> = React.memo(({ cat, cameraY }) => 
           },
         ]}
       >
+        <Animated.View style={{ transform: [{ rotate: wobbleRotate }], width: w, height: h }}>
         <Svg width={w} height={h} viewBox={`0 0 ${w + 10} ${h + 10}`}>
           <G transform={`translate(5, 5)`}>
             {/* Rainbow Aura for stage 9 */}
@@ -183,6 +199,7 @@ export const CatBody: React.FC<CatBodyProps> = React.memo(({ cat, cameraY }) => 
             <SvgAccessory stage={stage} w={w} h={h} />
           </G>
         </Svg>
+        </Animated.View>
 
         {/* Expression overlay (kept as Text for emoji) */}
         <View style={styles.expressionContainer}>

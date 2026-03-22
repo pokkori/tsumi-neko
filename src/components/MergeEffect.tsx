@@ -148,7 +148,7 @@ export const MergeEffect: React.FC<MergeEffectProps> = ({ mergeEvent, cameraY })
 
     const isChunky = mergeEvent.toShapeId === "chunky";
     const isLargeCat = mergeEvent.evolutionIndex >= 6;
-    const particleCount = isChunky ? 20 : isLargeCat ? 16 : 10;
+    const particleCount = isChunky ? 36 : isLargeCat ? 28 : 18;
     setParticles(generateParticles(particleCount));
 
     // Reset all animations
