@@ -501,6 +501,7 @@ export default function GameScreen() {
               <TouchableOpacity
                 style={{ marginTop: 12, backgroundColor: '#f59e0b', borderRadius: 12, paddingVertical: 14, paddingHorizontal: 32, minHeight: 44 }}
                 onPress={() => {
+                  nearmissShownRef.current = false;
                   setShowContinueModal(false);
                   startGame();
                 }}

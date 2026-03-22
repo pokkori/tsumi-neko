@@ -361,15 +361,7 @@ export default function ResultScreen() {
           </View>
         ) : null}
 
-        {/* Reward Ad UI */}
-        <TouchableOpacity
-          style={{ minHeight: 44, backgroundColor: '#FF6B35', borderRadius: 12, padding: 12, marginTop: 8, alignItems: 'center' }}
-          accessibilityLabel="リワード広告を見てコインを獲得"
-          accessibilityRole="button"
-          onPress={() => Alert.alert('まもなく実装', 'App Store配信後にリワード広告が利用可能になります')}
-        >
-          <Text style={{ color: 'white', fontWeight: 'bold' }}>リワード広告でコイン+50獲得</Text>
-        </TouchableOpacity>
+        {/* Reward Ad UI - App Store配信後に有効化 */}
 
         {/* Buttons */}
         <Text style={{ fontSize: 14, color: 'rgba(255,255,255,0.7)', textAlign: 'center', marginBottom: 8 }}>
