@@ -297,8 +297,11 @@ const styles = StyleSheet.create({
   footerButton: {
     backgroundColor: "rgba(255,255,255,0.7)",
     paddingHorizontal: 16,
-    paddingVertical: 10,
+    paddingVertical: 12,
     borderRadius: 12,
+    minHeight: 44,
+    justifyContent: "center",
+    alignItems: "center",
   },
   footerButtonText: {
     fontSize: 14,
