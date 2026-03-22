@@ -499,13 +499,24 @@ export default function GameScreen() {
                 </View>
               )}
               <TouchableOpacity
-                style={{ marginTop: 16 }}
+                style={{ marginTop: 12, backgroundColor: '#f59e0b', borderRadius: 12, paddingVertical: 14, paddingHorizontal: 32, minHeight: 44 }}
+                onPress={() => {
+                  setShowContinueModal(false);
+                  startGame();
+                }}
+              >
+                <Text style={{ color: '#0f0c29', fontWeight: 'bold', textAlign: 'center', fontSize: 18 }}>
+                  もう一回！
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={{ marginTop: 12 }}
                 onPress={() => {
                   setShowContinueModal(false);
                   navigateToResult();
                 }}
               >
-                <Text style={{ color: "#666", textAlign: "center", fontSize: 16 }}>
+                <Text style={{ color: "#666", textAlign: "center", fontSize: 14 }}>
                   結果を見る →
                 </Text>
               </TouchableOpacity>
