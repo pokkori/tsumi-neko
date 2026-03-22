@@ -24,6 +24,8 @@ import { MergeEffect } from "../src/components/MergeEffect";
 import { ScreenShake } from "../src/components/ScreenShake";
 import { LandingBounce } from "../src/components/LandingBounce";
 import { TutorialOverlay } from "../src/components/TutorialOverlay";
+import { ChunkyBornOverlay } from "../src/components/ChunkyBornOverlay";
+import { shareResult } from "../src/utils/share";
 import { PHYSICS } from "../src/constants/physics";
 import { COLORS } from "../src/constants/colors";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -56,6 +58,8 @@ export default function GameScreen() {
   const [paused, setPaused] = useState(false);
   const [started, setStarted] = useState(false);
   const [showTutorial, setShowTutorial] = useState(false);
+  const [showChunkyBorn, setShowChunkyBorn] = useState(false);
+  const [showChunkyShare, setShowChunkyShare] = useState(false);
 
   // PanResponder for drag control
   const panResponder = useRef(
@@ -146,6 +150,16 @@ export default function GameScreen() {
       return () => clearTimeout(timeout);
     }
   }, [gameState?.phase]);
+
+  const lastChunkyTimestamp = useRef(0);
+  useEffect(() => {
+    const ev = gameState?.lastMergeEvent;
+    if (!ev) return;
+    if (ev.toShapeId === "chunky" && ev.timestamp !== lastChunkyTimestamp.current) {
+      lastChunkyTimestamp.current = ev.timestamp;
+      setShowChunkyBorn(true);
+    }
+  }, [gameState?.lastMergeEvent?.timestamp]);
 
   if (!gameState && !showTutorial) {
     return (
@@ -304,6 +318,53 @@ export default function GameScreen() {
                 }}
               >
                 <Text style={styles.pauseMenuButtonText}>タイトルへ</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
+
+        {/* Chunky Born Fullscreen Overlay */}
+        <ChunkyBornOverlay
+          visible={showChunkyBorn}
+          onComplete={() => {
+            setShowChunkyBorn(false);
+            setShowChunkyShare(true);
+          }}
+        />
+
+        {/* Chunky Share Modal */}
+        <Modal visible={showChunkyShare} transparent animationType="fade">
+          <View style={styles.pauseOverlay}>
+            <View style={styles.pauseMenu}>
+              <Text style={{ fontSize: 28, textAlign: "center", marginBottom: 8 }}>👑</Text>
+              <Text style={[styles.pauseTitle, { fontSize: 18 }]}>ずんぐりネコ誕生！</Text>
+              <TouchableOpacity
+                style={styles.pauseMenuButton}
+                onPress={async () => {
+                  setShowChunkyShare(false);
+                  const score = gameState?.score ?? 0;
+                  const height = gameState?.height ?? 0;
+                  const catCount = gameState?.catCount ?? 0;
+                  const mergeCount = gameState?.mergeCount ?? 0;
+                  await shareResult({
+                    score,
+                    height,
+                    catCount,
+                    isNewRecord: false,
+                    mergeCount,
+                    shapesUsed: gameState?.shapesUsedInGame ?? [],
+                    maxCombo: gameState?.maxCombo ?? 0,
+                    maxEvolution: "chunky",
+                  });
+                }}
+              >
+                <Text style={styles.pauseMenuButtonText}>📢 シェアする</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.pauseMenuButton, styles.pauseMenuButtonSecondary]}
+                onPress={() => setShowChunkyShare(false)}
+              >
+                <Text style={styles.pauseMenuButtonText}>つづける</Text>
               </TouchableOpacity>
             </View>
           </View>

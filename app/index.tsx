@@ -18,6 +18,8 @@ export default function TitleScreen() {
   const router = useRouter();
   const stats = useGameStore((s) => s.stats);
   const initialized = useGameStore((s) => s.initialized);
+  const achievements = useGameStore((s) => s.achievements);
+  const hasChunky = achievements?.shapesUsed?.includes("chunky") ?? false;
   const { isCompleted } = useDailyChallenge();
 
   const pulseAnim = useRef(new Animated.Value(1)).current;
@@ -112,6 +114,21 @@ export default function TitleScreen() {
           <View style={styles.streakBadge}>
             <Text style={styles.streakBadgeText}>
               🔥 {stats.currentStreak}日連続！
+            </Text>
+          </View>
+        )}
+        {hasChunky && (
+          <View style={{
+            marginTop: 8,
+            backgroundColor: "rgba(255,215,0,0.25)",
+            borderRadius: 16,
+            paddingHorizontal: 16,
+            paddingVertical: 6,
+            borderWidth: 1,
+            borderColor: "rgba(255,215,0,0.6)",
+          }}>
+            <Text style={{ fontSize: 14, fontWeight: "bold", color: "#FFD700" }}>
+              👑 ずんぐりネコ達成済み！
             </Text>
           </View>
         )}

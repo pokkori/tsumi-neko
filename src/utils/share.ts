@@ -200,17 +200,21 @@ export async function shareResult(params: {
   const { score, height, catCount, isNewRecord, mergeCount = 0, shapesUsed = [], maxCombo = 0, maxEvolution = "" } = params;
 
   const recordMark = isNewRecord ? "NEW RECORD! " : "";
+  const chunkyMark = maxEvolution === "chunky" ? "👑ずんぐりネコ達成！ " : "";
   const emojiGrid = generateEmojiGrid(shapesUsed, mergeCount, catCount);
   const rankTitle = (RANK_TITLES.find(([threshold]) => score >= threshold) ?? RANK_TITLES[RANK_TITLES.length - 1])[1];
+  const hashtags = maxEvolution === "chunky"
+    ? "#つみネコ #ねこ #StackCats #パズルゲーム #ずんぐりネコ"
+    : "#つみネコ #ねこ #StackCats #パズルゲーム";
   const text = [
     `【つみネコ🐱】${rankTitle} | ${catCount}匹 | ${height.toFixed(1)}m`,
-    `${recordMark}スコア: ${score.toLocaleString()}`,
+    `${chunkyMark}${recordMark}スコア: ${score.toLocaleString()}`,
     "",
     emojiGrid,
     "",
     "つみネコ - ネコを積み上げて合体させよう!",
     GAME_URL,
-    "#つみネコ #ネコ #StackCats #パズルゲーム",
+    hashtags,
   ].filter(Boolean).join("\n");
 
   // Try to generate and share image on web
