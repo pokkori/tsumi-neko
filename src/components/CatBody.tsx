@@ -12,6 +12,9 @@ let Rect: any = null;
 let G: any = null;
 let Ellipse: any = null;
 let Line: any = null;
+let Defs: any = null;
+let RadialGradient: any = null;
+let Stop: any = null;
 
 try {
   const svgModule = require("react-native-svg");
@@ -22,6 +25,9 @@ try {
   G = svgModule.G;
   Ellipse = svgModule.Ellipse;
   Line = svgModule.Line;
+  Defs = svgModule.Defs;
+  RadialGradient = svgModule.RadialGradient;
+  Stop = svgModule.Stop;
 } catch {
   // SVG not available, will fall back to View-based rendering
 }
@@ -52,6 +58,20 @@ const STAGE_BODY_COLORS: Record<number, string> = {
   7: "#FFCCBC", // light orange
   8: "#FFF9C4", // light yellow
   9: "#FCE4EC", // pink
+};
+
+// Stage-based highlight color for RadialGradient (lighter than body)
+const STAGE_HIGHLIGHT_COLORS: Record<number, string> = {
+  0: "#FFF0EE", // ちびネコ highlight
+  1: "#FFFDF0", // まんまるネコ highlight
+  2: "#FFF5DC", // ながながネコ highlight
+  3: "#F5FFF5", // ぺたんこネコ highlight
+  4: "#F5F0ED", // 食パンネコ highlight
+  5: "#F0F8FF", // おすわりネコ highlight
+  6: "#FAF0FF", // まるまりネコ highlight
+  7: "#FFF5F0", // でぶネコ highlight
+  8: "#FFFEF0", // のびのびネコ highlight
+  9: "#FFF5FA", // ずんぐりネコ highlight
 };
 
 // Stage-based border/accent color for differentiation
@@ -143,6 +163,14 @@ export const CatBody: React.FC<CatBodyProps> = React.memo(({ cat, cameraY }) => 
       >
         <Animated.View style={{ transform: [{ rotate: wobbleRotate }], width: w, height: h }}>
         <Svg width={w} height={h} viewBox={`0 0 ${w + 10} ${h + 10}`}>
+          {Defs && RadialGradient && Stop && (
+            <Defs>
+              <RadialGradient id={`bodyGrad${stage}`} cx="40%" cy="30%" r="65%">
+                <Stop offset="0%" stopColor={STAGE_HIGHLIGHT_COLORS[stage] ?? skin.bodyColor} stopOpacity="1" />
+                <Stop offset="100%" stopColor={skin.bodyColor} stopOpacity="1" />
+              </RadialGradient>
+            </Defs>
+          )}
           <G transform={`translate(5, 5)`}>
             {/* Rainbow Aura for stage 9 */}
             {stage === 9 && (
@@ -152,7 +180,7 @@ export const CatBody: React.FC<CatBodyProps> = React.memo(({ cat, cameraY }) => 
             {/* Body shape from svgPath */}
             <Path
               d={shape.svgPath}
-              fill={skin.bodyColor}
+              fill={Defs && RadialGradient ? `url(#bodyGrad${stage})` : skin.bodyColor}
               stroke={STAGE_BORDER_COLORS[stage]}
               strokeWidth={2 + Math.floor(stage / 3)}
             />
