@@ -17,6 +17,7 @@ import { COLORS } from "../src/constants/colors";
 import { CatShapeId } from "../src/types";
 import { CAT_SHAPES } from "../src/data/catShapes";
 import { useGameStore } from "../src/stores/gameStore";
+import { BannerAdWrapper } from "../src/components/BannerAdWrapper";
 
 export default function ResultScreen() {
   const router = useRouter();
@@ -59,6 +60,12 @@ export default function ResultScreen() {
     { threshold: 0, rank: "C", color: "#888888", label: "次は上を目指せ！" },
   ] as const;
   const gameRank = GAME_RANK_THRESHOLDS.find(r => score >= r.threshold) ?? GAME_RANK_THRESHOLDS[3];
+
+  // 次ランク境界までの差分（C→B: 1500, B→A: 4000, A→S: 8000, S到達済み: null）
+  const toNext: number | null = (() => {
+    const higherRank = GAME_RANK_THRESHOLDS.find(r => r.threshold > score);
+    return higherRank ? higherRank.threshold - score : null;
+  })();
 
   // maxEvolutionをshapesUsedから即座に計算（useEffectより前で確定させる）
   const EVOLUTION_NAMES: Record<string, string> = {
@@ -231,7 +238,7 @@ export default function ResultScreen() {
         {!isNewRecord && toNext !== null && toNext > 0 && (
           <View style={{ backgroundColor: 'rgba(150,200,255,0.1)', borderRadius: 10, paddingHorizontal: 16, paddingVertical: 6, marginBottom: 10, borderWidth: 1, borderColor: 'rgba(100,180,255,0.3)' }}>
             <Text style={{ color: '#90CAF9', fontSize: 12, textAlign: 'center' }}>
-              あと {formatScore(toNext)} 点でランク{gameRank.rank === 'C' ? 'B' : gameRank.rank === 'B' ? 'B+' : gameRank.rank === 'B+' ? 'A' : gameRank.rank === 'A' ? 'A+' : 'S'} 到達！
+              あと {formatScore(toNext)} 点でランク{gameRank.rank === 'C' ? 'B' : gameRank.rank === 'B' ? 'A' : 'S'} 到達！
             </Text>
           </View>
         )}
@@ -424,6 +431,9 @@ export default function ResultScreen() {
             <Text style={{ color: '#FFD700', fontSize: 13, textAlign: 'center' }}>コインを買ってずんぐりネコを目指す</Text>
           </TouchableOpacity>
         )}
+
+        {/* BannerAd: ネイティブ専用・Web では非表示 */}
+        <BannerAdWrapper marginBottom={8} />
       </Animated.View>
     </SafeAreaView>
   );

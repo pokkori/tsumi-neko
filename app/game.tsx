@@ -33,6 +33,7 @@ import { COLORS } from "../src/constants/colors";
 import { NEAR_CHUNKY_GAP } from "../src/constants/game";
 import { CAT_SHAPES } from "../src/data/catShapes";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { BannerAdWrapper } from "../src/components/BannerAdWrapper";
 
 const TUTORIAL_KEY = "@tsumineko/tutorial_seen";
 
@@ -521,6 +522,9 @@ export default function GameScreen() {
                   結果を見る →
                 </Text>
               </TouchableOpacity>
+
+              {/* BannerAd: ゲームオーバーモーダル最下部・ネイティブ専用 */}
+              <BannerAdWrapper marginBottom={4} />
             </View>
           </View>
         </Modal>
