@@ -17,18 +17,18 @@ interface TutorialOverlayProps {
 const STEPS = [
   {
     emoji: "👆",
-    title: "タップで猫を落とそう!",
-    description: "猫が左右に動くよ。好きなタイミングでタップ!",
+    title: "ドラッグで位置を決めて落とそう!",
+    description: "画面を左右にドラッグして落とす位置を決め、指を離すと猫が落ちるよ!",
   },
   {
     emoji: "✨",
-    title: "同じ猫がぶつかると合体!",
-    description: "同じ形の猫同士がぶつかるとレベルアップするよ!",
+    title: "同じ猫がぶつかると合体・進化!",
+    description: "同じ形の猫同士がぶつかると次の形に進化！10段階で最強のずんぐりネコを目指そう!",
   },
   {
-    emoji: "🏆",
-    title: "高く積み上げてハイスコア!",
-    description: "崩さないように積み上げよう。合体ボーナスも忘れずに!",
+    emoji: "👑",
+    title: "目標は「ずんぐりネコ」誕生!",
+    description: "合体を繰り返してずんぐりネコを生み出せ！崩さないように高く積んでハイスコアも狙おう!",
   },
 ];
 
@@ -58,7 +58,7 @@ export const TutorialOverlay: React.FC<TutorialOverlayProps> = ({
         }),
       ]).start();
     }
-  }, [visible, step]);
+  }, [visible]);
 
   const handleNext = () => {
     if (step < STEPS.length - 1) {

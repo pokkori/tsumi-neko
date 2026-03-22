@@ -46,6 +46,12 @@ export default function ResultScreen() {
     ? (params.shapesUsed.split(",").filter(Boolean) as CatShapeId[])
     : [];
 
+  const evolutionOrder = ["tiny","round","long","flat","loaf","triangle","curled","fat","stretchy","chunky"];
+  const evolutionLabels = ["ちび","まんまる","ながなが","ぺたんこ","食パン","おすわり","まるまり","でぶ","のびのび","ずんぐり"];
+  const maxReachedIdx = evolutionOrder.reduce((max, shape, idx) => {
+    return shapesUsed.includes(shape as CatShapeId) ? idx : max;
+  }, -1);
+
   const GAME_RANK_THRESHOLDS = [
     { threshold: 8000, rank: "S", color: "#FFD700", label: "スコアマスター！" },
     { threshold: 4000, rank: "A", color: "#C0C0C0", label: "ネコ積み達人" },
@@ -95,9 +101,9 @@ export default function ResultScreen() {
       const alreadyUnlocked = store.unlockedSkins.includes("persian");
       if (!alreadyUnlocked) {
         store.unlockSkin("persian").then(() => {
-          setSkinUnlockMessage("🎉 スキン解放！ペルシャネコが使えるようになった！");
+          setSkinUnlockMessage("スキン解放！ペルシャネコが使えるようになった！");
           Alert.alert(
-            "🎉 スキン解放！",
+            "スキン解放！",
             "ペルシャネコのスキンが解放されました！\nショップで確認してね！"
           );
         });
@@ -181,7 +187,7 @@ export default function ResultScreen() {
               },
             ]}
           >
-            <Text style={styles.newRecordText}>🎉 NEW RECORD! 🎉</Text>
+            <Text style={styles.newRecordText}>NEW RECORD!</Text>
           </Animated.View>
         )}
 
@@ -194,7 +200,7 @@ export default function ResultScreen() {
             marginBottom: 12,
           }}>
             <Text style={{ color: "#FFFFFF", fontSize: 16, fontWeight: "bold", textAlign: "center" }}>
-              📅 デイリーチャレンジ クリア！
+              デイリーチャレンジ クリア！
             </Text>
           </View>
         )}
@@ -228,9 +234,33 @@ export default function ResultScreen() {
           {coinsEarned > 0 && (
             <View style={styles.scoreRow}>
               <Text style={styles.scoreLabel}>獲得コイン</Text>
-              <Text style={[styles.scoreValue, { color: "#FFD700" }]}>🪙 +{coinsEarned}</Text>
+              <Text style={[styles.scoreValue, { color: "#FFD700" }]}>COIN: +{coinsEarned}</Text>
             </View>
           )}
+        </View>
+
+        {/* Evolution Chart */}
+        <View style={{ marginTop: 16, paddingHorizontal: 8 }}>
+          <Text style={{ color: "#aaa", fontSize: 12, textAlign: "center", marginBottom: 6 }}>進化チャート</Text>
+          <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+            {evolutionOrder.map((shape, idx) => {
+              const reached = shapesUsed.includes(shape as CatShapeId);
+              const isMax = idx === maxReachedIdx;
+              return (
+                <View key={shape} style={{ alignItems: "center", flex: 1 }}>
+                  <View style={{
+                    width: 20, height: 20, borderRadius: 10,
+                    backgroundColor: reached ? (isMax ? "#FFD700" : "#81C784") : "#333",
+                    borderWidth: isMax ? 2 : 0,
+                    borderColor: "#FFD700",
+                  }} />
+                  <Text style={{ fontSize: 6, color: reached ? "#fff" : "#555", marginTop: 2 }}>
+                    {evolutionLabels[idx]}
+                  </Text>
+                </View>
+              );
+            })}
+          </View>
         </View>
 
         {evolutionBadge && (
@@ -249,7 +279,7 @@ export default function ResultScreen() {
             transform: [{ scale: badgePulseAnim }],
           }}>
             <Text style={{ color: '#FFD700', fontSize: 18, fontWeight: 'bold', textAlign: 'center' }}>
-              {'🌟'} {evolutionBadge}
+              {evolutionBadge}
             </Text>
           </Animated.View>
         )}
@@ -275,7 +305,7 @@ export default function ResultScreen() {
         {currentStreak >= 2 && (
           <View style={styles.streakBanner}>
             <Text style={styles.streakText}>
-              🔥 {currentStreak}日連続プレイ中！
+              {currentStreak}日連続プレイ中！
             </Text>
           </View>
         )}
@@ -293,11 +323,20 @@ export default function ResultScreen() {
         ) : null}
 
         {/* Buttons */}
+        <Text style={{ fontSize: 14, color: 'rgba(255,255,255,0.7)', textAlign: 'center', marginBottom: 8 }}>
+          {score >= 8000
+            ? "伝説のスコア！さらなる高みへ！"
+            : score >= 4000
+            ? "あと少しでずんぐりネコ達人！"
+            : score >= 1500
+            ? "もっと積めるはず！次こそずんぐりネコ！"
+            : "コツをつかんで再挑戦！"}
+        </Text>
         <TouchableOpacity
-          style={styles.retryButton}
+          style={[styles.retryButton, { width: "90%", backgroundColor: "#FF6B35" }]}
           onPress={() => router.replace("/game")}
         >
-          <Text style={styles.buttonText}>もう一回</Text>
+          <Text style={styles.buttonText}>もう一回！</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -305,7 +344,7 @@ export default function ResultScreen() {
           onPress={handleShare}
         >
           <Text style={styles.buttonText}>
-            {previewDataUrl ? "📸 画像付きシェア" : "📢 シェアする"}
+            {previewDataUrl ? "画像付きシェア" : "シェアする"}
           </Text>
         </TouchableOpacity>
 
@@ -325,7 +364,7 @@ export default function ResultScreen() {
               }
             }}
           >
-            <Text style={{ color: '#FFD700', fontSize: 13, textAlign: 'center' }}>🛍 コインを買ってずんぐりネコを目指す</Text>
+            <Text style={{ color: '#FFD700', fontSize: 13, textAlign: 'center' }}>コインを買ってずんぐりネコを目指す</Text>
           </TouchableOpacity>
         )}
       </Animated.View>

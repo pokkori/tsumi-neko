@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from "react";
 import { View, Text, StyleSheet, Animated, Dimensions, ViewStyle } from "react-native";
+import Svg, { Path } from "react-native-svg";
 
 const { width: SW, height: SH } = Dimensions.get("window");
 
@@ -8,7 +9,7 @@ const STAR_CONFIGS = Array.from({ length: 20 }, (_, i) => ({
   y: (i * 83.7) % (SH * 0.7),
   delay: i * 60,
   size: 8 + (i % 3) * 6,
-  emoji: ["⭐", "✨", "🌟", "💫"][i % 4],
+  symbol: ["*", "+", "x", "o"][i % 4],
 }));
 
 interface ChunkyBornOverlayProps {
@@ -27,6 +28,7 @@ export const ChunkyBornOverlay: React.FC<ChunkyBornOverlayProps> = ({ visible, o
   const starOpacities = useRef(STAR_CONFIGS.map(() => new Animated.Value(0))).current;
   const ringAnim = useRef(new Animated.Value(0)).current;
   const ringScale = useRef(new Animated.Value(0.4)).current;
+  const burstOpacity = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     if (!visible) {
@@ -38,6 +40,7 @@ export const ChunkyBornOverlay: React.FC<ChunkyBornOverlayProps> = ({ visible, o
       starOpacities.forEach(a => a.setValue(0));
       ringAnim.setValue(0);
       ringScale.setValue(0.4);
+      burstOpacity.setValue(0);
       return;
     }
 
@@ -52,6 +55,11 @@ export const ChunkyBornOverlay: React.FC<ChunkyBornOverlayProps> = ({ visible, o
         tension: 150,
         useNativeDriver: true,
       }).start();
+
+      Animated.sequence([
+        Animated.timing(burstOpacity, { toValue: 1, duration: 200, useNativeDriver: true }),
+        Animated.timing(burstOpacity, { toValue: 0, duration: 400, useNativeDriver: true }),
+      ]).start();
 
       // 3重リングアニメーション
       Animated.parallel([
@@ -87,12 +95,35 @@ export const ChunkyBornOverlay: React.FC<ChunkyBornOverlayProps> = ({ visible, o
 
   if (!visible) return null;
 
+  const burstSize = 200;
+  const bxcx = burstSize / 2;
+  const byCy = burstSize / 2;
+  const rays = 8;
+
   return (
     <Animated.View
       style={[styles.container, { opacity: overlayOpacity }]}
       pointerEvents="none"
     >
       <Animated.View style={[styles.bg, { opacity: bgOpacity }]} />
+
+      <Animated.View style={{ position: "absolute", opacity: burstOpacity }} pointerEvents="none">
+        <Svg width={burstSize} height={burstSize}>
+          {Array.from({ length: rays }).map((_, i) => {
+            const angle = (i * Math.PI * 2) / rays;
+            const x2 = bxcx + Math.cos(angle) * burstSize * 0.5;
+            const y2 = byCy + Math.sin(angle) * burstSize * 0.5;
+            return (
+              <Path
+                key={i}
+                d={`M${bxcx} ${byCy} L${x2} ${y2}`}
+                stroke="rgba(255,215,0,0.6)"
+                strokeWidth="6"
+              />
+            );
+          })}
+        </Svg>
+      </Animated.View>
 
       {STAR_CONFIGS.map((cfg, i) => (
         <Animated.Text
@@ -107,7 +138,7 @@ export const ChunkyBornOverlay: React.FC<ChunkyBornOverlayProps> = ({ visible, o
           }}
           pointerEvents="none"
         >
-          {cfg.emoji}
+          {cfg.symbol}
         </Animated.Text>
       ))}
 
@@ -134,8 +165,8 @@ export const ChunkyBornOverlay: React.FC<ChunkyBornOverlayProps> = ({ visible, o
       })}
 
       <Animated.View style={[styles.center, { transform: [{ scale: crownScale }] }]}>
-        <Text style={styles.crownEmoji}>👑</Text>
-        <Text style={styles.catEmoji}>🐱</Text>
+        <Text style={styles.crownEmoji}>★</Text>
+        <Text style={styles.catEmoji}>CAT</Text>
       </Animated.View>
 
       <Animated.View
@@ -148,7 +179,7 @@ export const ChunkyBornOverlay: React.FC<ChunkyBornOverlayProps> = ({ visible, o
         ]}
       >
         <Text style={styles.titleText}>ずんぐりネコ誕生！</Text>
-        <Text style={styles.subtitleText}>最高進化達成🎉</Text>
+        <Text style={styles.subtitleText}>最高進化達成！</Text>
         <Text style={{ fontSize: 28, fontWeight: 'bold', color: rankColor, marginTop: 8, textShadowColor: 'rgba(0,0,0,0.9)', textShadowOffset: { width: 1, height: 1 }, textShadowRadius: 4 }}>ランク {rank}</Text>
       </Animated.View>
     </Animated.View>

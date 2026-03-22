@@ -15,6 +15,17 @@ import { SHOP_ITEMS } from "../src/data/shopItems";
 import { formatCoins } from "../src/utils/format";
 import { COLORS } from "../src/constants/colors";
 
+const tagStyle = {
+  fontSize: 10,
+  color: '#FF6B35',
+  backgroundColor: 'rgba(255,107,53,0.1)',
+  borderRadius: 8,
+  paddingHorizontal: 6,
+  paddingVertical: 2,
+  borderWidth: 1,
+  borderColor: 'rgba(255,107,53,0.3)',
+} as const;
+
 const SKIN_PRICES: Record<string, number> = {
   scottish: 500,
   siamese: 500,
@@ -62,6 +73,25 @@ export default function ShopScreen() {
       </View>
 
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
+        {/* Coin Guide Card */}
+        <View style={{
+          backgroundColor: 'rgba(255,215,0,0.08)',
+          borderRadius: 12,
+          padding: 12,
+          marginBottom: 8,
+          borderWidth: 1,
+          borderColor: 'rgba(255,215,0,0.25)',
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: 8,
+        }}>
+          <Text style={{ fontSize: 20 }}>🪙</Text>
+          <View style={{ flex: 1 }}>
+            <Text style={{ fontSize: 13, color: '#FFD700', fontWeight: 'bold' }}>コインの貯め方</Text>
+            <Text style={{ fontSize: 11, color: '#aaa', marginTop: 2 }}>スコア÷100枚 + 合体ボーナス2枚/回。毎日プレイで積み上げよう！</Text>
+          </View>
+        </View>
+
         {/* Skin Shop */}
         <Text style={styles.sectionTitle}>スキン</Text>
 
@@ -78,6 +108,13 @@ export default function ShopScreen() {
                 <View style={styles.shopCardInfo}>
                   <Text style={styles.shopCardName}>{skin.name}</Text>
                   <Text style={styles.shopCardDesc}>{skin.description}</Text>
+                  <View style={{ flexDirection:'row', flexWrap:'wrap', gap:4, marginTop:4 }}>
+                    {skin.id === 'scottish' && <Text style={tagStyle}>🔇 静かな着地</Text>}
+                    {skin.id === 'siamese' && <Text style={tagStyle}>💨 スリムな体型</Text>}
+                    {skin.id === 'munchkin' && <Text style={tagStyle}>🪨 低重心・安定</Text>}
+                    {skin.id === 'bengal' && <Text style={tagStyle}>⚡ アクティブ</Text>}
+                    {skin.id === 'ragdoll' && <Text style={tagStyle}>🧸 おっとり系</Text>}
+                  </View>
                 </View>
               </View>
               {owned ? (
@@ -99,6 +136,22 @@ export default function ShopScreen() {
         {/* IAP Items */}
         <Text style={styles.sectionTitle}>課金アイテム</Text>
 
+        <View style={{
+          backgroundColor: 'rgba(255,215,0,0.12)',
+          borderRadius: 12,
+          padding: 12,
+          marginBottom: 12,
+          borderWidth: 1,
+          borderColor: 'rgba(255,215,0,0.4)',
+        }}>
+          <Text style={{ fontSize: 13, color: '#FFD700', textAlign: 'center', fontWeight: 'bold' }}>
+            🎮 ゲームプレイでコインを貯めてスキンを解放！
+          </Text>
+          <Text style={{ fontSize: 12, color: '#aaa', textAlign: 'center', marginTop: 4 }}>
+            スコア×÷100 + 合体×2枚 獲得。コンティニューも使えます
+          </Text>
+        </View>
+
         {SHOP_ITEMS.map((item) => (
           <View key={item.productId} style={styles.shopCard}>
             <View style={styles.shopCardInfo}>
@@ -108,7 +161,11 @@ export default function ShopScreen() {
             <TouchableOpacity
               style={[styles.buyButton, styles.iapButton]}
               onPress={() =>
-                Alert.alert("課金機能", "ストアリリース後に有効になります")
+                Alert.alert(
+                  "課金アイテム",
+                  `${item.name}（¥${item.priceJPY}）\n\nApp Store決済は準備中です。\nコインはゲームプレイで獲得できます！`,
+                  [{ text: "OK" }]
+                )
               }
             >
               <Text style={styles.buyButtonText}>¥{item.priceJPY}</Text>

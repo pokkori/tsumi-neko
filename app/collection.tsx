@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -8,12 +8,19 @@ import {
   SafeAreaView,
 } from "react-native";
 import { useRouter } from "expo-router";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useGameStore } from "../src/stores/gameStore";
 import { CAT_SHAPES } from "../src/data/catShapes";
 import { CAT_SKINS } from "../src/data/catSkins";
 import { ACHIEVEMENTS } from "../src/data/achievements";
 import { COLORS } from "../src/constants/colors";
 import { CatShapeId } from "../src/types";
+
+const WEEKLY_MISSIONS = [
+  { id: "wm_coins_500", label: "今週500コイン獲得", target: 500, reward: 200 },
+  { id: "wm_merge_50", label: "今週50回合体", target: 50, reward: 150 },
+  { id: "wm_chunky_1", label: "今週ずんぐりを1回誕生させる", target: 1, reward: 300 },
+];
 
 // Evolution stage order (matches EVOLUTION_MAP chain)
 const EVOLUTION_ORDER: CatShapeId[] = [
@@ -165,6 +172,16 @@ export default function CollectionScreen() {
   const shapesUsedCount = achievements.shapesUsed.length;
   const unlockedCount = achievements.unlockedIds.length;
 
+  const [weeklyProgress, setWeeklyProgress] = useState<Record<string, number>>({});
+
+  useEffect(() => {
+    (async () => {
+      const weekKey = `@tsumineko/weekly_${new Date().toISOString().slice(0, 7)}_W${Math.ceil(new Date().getDate() / 7)}`;
+      const raw = await AsyncStorage.getItem(weekKey);
+      if (raw) setWeeklyProgress(JSON.parse(raw));
+    })();
+  }, []);
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
@@ -302,6 +319,29 @@ export default function CollectionScreen() {
             </View>
           );
         })}
+
+        {/* Weekly Missions */}
+        <View style={{ marginTop: 20, paddingHorizontal: 16 }}>
+          <Text style={{ color: "#FFD700", fontSize: 16, fontWeight: "bold", marginBottom: 8 }}>週次ミッション</Text>
+          {WEEKLY_MISSIONS.map(mission => {
+            const progress = weeklyProgress[mission.id] ?? 0;
+            const completed = progress >= mission.target;
+            const pct = Math.min((progress / mission.target) * 100, 100);
+            return (
+              <View key={mission.id} style={{ marginBottom: 12, padding: 12, backgroundColor: "rgba(255,255,255,0.05)", borderRadius: 12 }}>
+                <Text style={{ color: completed ? "#4CAF50" : "#fff", fontSize: 14, fontWeight: "bold" }}>
+                  {completed ? "[完了] " : ""}{mission.label}
+                </Text>
+                <View style={{ height: 6, backgroundColor: "#333", borderRadius: 3, marginTop: 6 }}>
+                  <View style={{ width: `${pct}%` as any, height: 6, backgroundColor: completed ? "#4CAF50" : "#FF6B35", borderRadius: 3 }} />
+                </View>
+                <Text style={{ color: "#aaa", fontSize: 11, marginTop: 3 }}>
+                  {progress}/{mission.target} (報酬: {mission.reward}コイン)
+                </Text>
+              </View>
+            );
+          })}
+        </View>
 
         <View style={{ height: 40 }} />
       </ScrollView>

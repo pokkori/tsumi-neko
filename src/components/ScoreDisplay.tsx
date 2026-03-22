@@ -7,6 +7,15 @@ interface ScoreDisplayProps {
   height: number;
   catCount: number;
   combo: number;
+  bestScore?: number;
+}
+
+function getComboColor(combo: number): string {
+  if (combo < 3) return "#FFFFFF";
+  if (combo < 5) return "#FFD700";
+  if (combo < 10) return "#FF6B6B";
+  if (combo < 20) return "#FF00FF";
+  return "#00FFFF";
 }
 
 export const ScoreDisplay: React.FC<ScoreDisplayProps> = ({
@@ -14,7 +23,9 @@ export const ScoreDisplay: React.FC<ScoreDisplayProps> = ({
   height,
   catCount,
   combo,
+  bestScore = 0,
 }) => {
+  const isNewRecord = score > 0 && score >= bestScore;
   return (
     <View style={styles.container}>
       <View style={styles.row}>
@@ -29,25 +40,28 @@ export const ScoreDisplay: React.FC<ScoreDisplayProps> = ({
           </Text>
         )}
       </View>
+      <View style={styles.row}>
+        {isNewRecord ? (
+          <Text style={[styles.bestLabel, { color: "#FFD700" }]}>🏆 NEW RECORD!</Text>
+        ) : (
+          <Text style={styles.bestLabel}>Best: {formatScore(bestScore)}</Text>
+        )}
+      </View>
     </View>
   );
 };
 
-function getComboColor(combo: number): string {
-  if (combo < 3) return "#FFFFFF";
-  if (combo < 5) return "#FFD700";
-  if (combo < 10) return "#FF6B6B";
-  if (combo < 20) return "#FF00FF";
-  return "#00FFFF";
-}
-
 const styles = StyleSheet.create({
   container: {
     position: "absolute",
-    top: 50,
-    left: 16,
-    right: 16,
+    top: 8,
+    left: 8,
+    right: 8,
     zIndex: 10,
+    backgroundColor: "rgba(0,0,0,0.45)",
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
   },
   row: {
     flexDirection: "row",
@@ -57,14 +71,22 @@ const styles = StyleSheet.create({
   },
   label: {
     color: "#FFFFFF",
-    fontSize: 18,
+    fontSize: 14,
     fontWeight: "bold",
     textShadowColor: "rgba(0,0,0,0.7)",
     textShadowOffset: { width: 1, height: 1 },
     textShadowRadius: 3,
   },
   combo: {
-    fontSize: 18,
+    fontSize: 14,
+    fontWeight: "bold",
+    textShadowColor: "rgba(0,0,0,0.7)",
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 3,
+  },
+  bestLabel: {
+    color: "rgba(255,255,255,0.7)",
+    fontSize: 13,
     fontWeight: "bold",
     textShadowColor: "rgba(0,0,0,0.7)",
     textShadowOffset: { width: 1, height: 1 },

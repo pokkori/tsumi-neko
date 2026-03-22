@@ -9,10 +9,16 @@ export function generateEmojiGrid(
 ): string {
   if (shapesUsed.length === 0) return "";
 
-  // Build a grid showing which cat types were used
-  const emojiRow = shapesUsed.map((s) => CAT_EMOJI[s] || "?").join("");
+  const EVOLUTION_ORDER: CatShapeId[] = ["tiny","round","long","flat","loaf","triangle","curled","fat","stretchy","chunky"];
+  const STAGE_NUMBERS: Record<string, string> = {
+    tiny: "1", round: "2", long: "3", flat: "4", loaf: "5",
+    triangle: "6", curled: "7", fat: "8", stretchy: "9", chunky: "10",
+  };
 
-  // Create a visual representation of the tower
+  // Build a grid showing which cat stages were used
+  const stageRow = shapesUsed.map((s) => STAGE_NUMBERS[s] || "?").join("-");
+
+  // Create a visual representation of the tower using stage numbers
   const towerHeight = Math.min(catCount, 5);
   const towerLines: string[] = [];
   for (let i = 0; i < towerHeight; i++) {
@@ -21,16 +27,16 @@ export function generateEmojiGrid(
       .fill(null)
       .map(() => {
         const idx = Math.floor(Math.random() * shapesUsed.length);
-        return CAT_EMOJI[shapesUsed[idx]] || "\u{1F431}";
+        return `[${STAGE_NUMBERS[shapesUsed[idx]] || "?"}]`;
       })
       .join("");
     towerLines.unshift(cats);
   }
 
   const grid = towerLines.join("\n");
-  const mergeInfo = mergeCount > 0 ? `\n\u5408\u4F53: ${mergeCount}\u56DE \u2728` : "";
+  const mergeInfo = mergeCount > 0 ? `\n合体: ${mergeCount}回` : "";
 
-  return `${grid}${mergeInfo}\n\u4F7F\u3063\u305F\u732B: ${emojiRow}`;
+  return `${grid}${mergeInfo}\n使った猫: ${stageRow}`;
 }
 
 /**
@@ -62,7 +68,7 @@ export async function generateVerticalShareImage(params: {
     ctx.fillStyle = "#fff";
     ctx.font = "bold 120px sans-serif";
     ctx.textAlign = "center";
-    ctx.fillText("🐱 つみネコ", W / 2, 300);
+    ctx.fillText("つみネコ", W / 2, 300);
 
     // スコア
     ctx.font = "bold 200px sans-serif";
@@ -179,11 +185,16 @@ export async function generateShareImage(params: {
       ctx.beginPath();
       safeRoundRect(ctx, 820, 160, 340, 340, 20);
       ctx.fill();
-      // Cat emoji (large)
-      ctx.font = '160px sans-serif';
+      // Evolution name (text instead of emoji for cross-platform compatibility)
+      ctx.font = 'bold 48px sans-serif';
+      ctx.fillStyle = '#FFD700';
       ctx.textAlign = 'center';
-      ctx.fillText(catEmoji, 990, 370);
-      // Evolution name
+      ctx.fillText(evolutionName ?? "ずんぐりネコ", 990, 340);
+      // 金色の枠線を追加
+      ctx.strokeStyle = '#FFD700';
+      ctx.lineWidth = 3;
+      ctx.strokeRect(825, 165, 330, 330);
+      // Evolution label
       ctx.fillStyle = '#FFD700';
       ctx.font = 'bold 28px sans-serif';
       ctx.fillText(`最高進化: ${evolutionName}`, 990, 450);
@@ -234,12 +245,12 @@ function safeRoundRect(
 const GAME_URL = "https://tsumi-neko.vercel.app";
 
 const RANK_TITLES: [number, string][] = [
-  [10000, "🏆ネコタワー伝説"],
-  [5000,  "👑ずんぐりマスター"],
-  [3000,  "🌟ネコ積み名人"],
-  [1500,  "🔥コンボマニア"],
-  [500,   "😺ネコ積みビギナー"],
-  [0,     "🐱ちびネコ見習い"],
+  [10000, "ネコタワー伝説"],
+  [5000,  "ずんぐりマスター"],
+  [3000,  "ネコ積み名人"],
+  [1500,  "コンボマニア"],
+  [500,   "ネコ積みビギナー"],
+  [0,     "ちびネコ見習い"],
 ];
 
 export async function shareResult(params: {
@@ -255,20 +266,27 @@ export async function shareResult(params: {
   const { score, height, catCount, isNewRecord, mergeCount = 0, shapesUsed = [], maxCombo = 0, maxEvolution = "" } = params;
 
   const recordMark = isNewRecord ? "NEW RECORD! " : "";
-  const chunkyMark = maxEvolution === "chunky" ? "👑ずんぐりネコ達成！ " : "";
+  const chunkyMark = maxEvolution === "chunky" ? "★ずんぐりネコ達成！ " : "";
   const emojiGrid = generateEmojiGrid(shapesUsed, mergeCount, catCount);
   const rankTitle = (RANK_TITLES.find(([threshold]) => score >= threshold) ?? RANK_TITLES[RANK_TITLES.length - 1])[1];
   const gameRankStr = score >= 8000 ? "S" : score >= 4000 ? "A" : score >= 1500 ? "B" : "C";
   const hashtags = maxEvolution === "chunky"
     ? "#つみネコ #ねこ #StackCats #パズルゲーム #ずんぐりネコ"
     : "#つみネコ #ねこ #StackCats #パズルゲーム";
+  const challengeCall = score < 1500
+    ? "あなたはずんぐりネコを誕生させられる？"
+    : score < 5000
+    ? "ずんぐりネコまであと少し…続きは自分でやってみて"
+    : "このスコア、超えられる？";
+
   const text = [
-    `【つみネコ🐱】ランク${gameRankStr} | ${catCount}匹 | ${height.toFixed(1)}m`,
-    `${chunkyMark}${recordMark}スコア: ${score.toLocaleString()}`,
+    `つみネコ スコア ${score.toLocaleString()} 点！ランク${gameRankStr}`,
+    `${chunkyMark}${recordMark}${catCount}匹 | 高さ${height.toFixed(1)}m | ${rankTitle}`,
     "",
     emojiGrid,
     "",
-    "つみネコ - ネコを積み上げて合体させよう!",
+    challengeCall,
+    "つみネコ - 猫を積んで合体！最強ずんぐりネコを目指せ",
     GAME_URL,
     hashtags,
   ].filter(Boolean).join("\n");

@@ -8,6 +8,7 @@ import {
   SafeAreaView,
   PanResponder,
   Alert,
+  Animated,
 } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useGameState } from "../src/hooks/useGameState";
@@ -51,6 +52,7 @@ export default function GameScreen() {
 
   const settings = useGameStore((s) => s.settings);
   const walletCoins = useGameStore((s) => s.wallet?.coins ?? 0);
+  const bestScore = useGameStore((s) => s.stats?.bestScore ?? 0);
   const { challenge, recordAttempt } = useDailyChallenge();
 
   // Build challenge config for daily mode
@@ -75,6 +77,8 @@ export default function GameScreen() {
   const [continueUsed, setContinueUsed] = useState(false);
   const [personalityToast, setPersonalityToast] = useState<string | null>(null);
   const pendingResultParams = useRef<Record<string, string> | null>(null);
+  const chunkyCountdownPulse = useRef(new Animated.Value(1)).current;
+  const lastRemainingRef = useRef<number>(0);
 
   // PanResponder for drag control
   const panResponder = useRef(
@@ -234,6 +238,7 @@ export default function GameScreen() {
               height={gameState.height}
               catCount={gameState.catCount}
               combo={gameState.combo}
+              bestScore={bestScore}
             />
 
             {/* Merge count indicator */}
@@ -246,8 +251,8 @@ export default function GameScreen() {
             )}
 
             {/* Coin Mini Display */}
-            <View style={{ position: 'absolute', top: 52, left: 16, backgroundColor: 'rgba(0,0,0,0.25)', borderRadius: 10, paddingHorizontal: 8, paddingVertical: 3, zIndex: 10 }}>
-              <Text style={{ color: '#FFD700', fontSize: 11, fontWeight: 'bold' }}>🪙 {walletCoins}</Text>
+            <View style={{ position: 'absolute', top: 72, left: 16, backgroundColor: 'rgba(0,0,0,0.25)', borderRadius: 10, paddingHorizontal: 8, paddingVertical: 3, zIndex: 10 }}>
+              <Text style={{ color: '#FFD700', fontSize: 11, fontWeight: 'bold' }}>C {walletCoins}</Text>
             </View>
 
             {/* Next Preview */}
@@ -288,21 +293,35 @@ export default function GameScreen() {
                 return idx > max ? idx : max;
               }, -1);
               const remainingMerges = maxCurrentStage >= 0 ? CHUNKY_INDEX - maxCurrentStage : CHUNKY_INDEX;
+              if (remainingMerges !== lastRemainingRef.current && remainingMerges === 1) {
+                chunkyCountdownPulse.setValue(1);
+                Animated.loop(
+                  Animated.sequence([
+                    Animated.timing(chunkyCountdownPulse, { toValue: 1.08, duration: 400, useNativeDriver: true }),
+                    Animated.timing(chunkyCountdownPulse, { toValue: 1.0, duration: 400, useNativeDriver: true }),
+                  ])
+                ).start();
+              }
+              lastRemainingRef.current = remainingMerges;
+              const isLast = remainingMerges === 1;
               return remainingMerges <= 3 && remainingMerges > 0 ? (
-                <View style={{
+                <Animated.View style={{
                   position: "absolute",
                   bottom: 90,
                   alignSelf: "center",
-                  backgroundColor: "rgba(255,215,0,0.9)",
-                  paddingHorizontal: 16,
-                  paddingVertical: 6,
-                  borderRadius: 20,
+                  backgroundColor: isLast ? "rgba(255,215,0,1.0)" : "rgba(255,215,0,0.9)",
+                  paddingHorizontal: isLast ? 22 : 16,
+                  paddingVertical: isLast ? 10 : 6,
+                  borderRadius: 24,
                   zIndex: 15,
+                  transform: [{ scale: isLast ? chunkyCountdownPulse : 1 }],
+                  borderWidth: isLast ? 2 : 0,
+                  borderColor: "#FF6B35",
                 }}>
-                  <Text style={{ fontSize: 14, fontWeight: "bold", color: "#333" }}>
-                    👑 あと{remainingMerges}回で ずんぐりネコ！
+                  <Text style={{ fontSize: isLast ? 18 : 14, fontWeight: "bold", color: "#333" }}>
+                    {isLast ? "★ あと1回！ずんぐりネコ誕生直前！" : `★ あと${remainingMerges}回で ずんぐりネコ！`}
                   </Text>
-                </View>
+                </Animated.View>
               ) : null;
             })()}
 
@@ -389,15 +408,25 @@ export default function GameScreen() {
         <Modal visible={showContinueModal} transparent animationType="fade">
           <View style={styles.pauseOverlay}>
             <View style={styles.pauseMenu}>
-              <Text style={{ fontSize: 28, textAlign: "center", marginBottom: 4 }}>😿</Text>
+              <Text style={{ fontSize: 28, textAlign: "center", marginBottom: 4 }}></Text>
               <Text style={styles.pauseTitle}>ゲームオーバー</Text>
               <Text style={{ fontSize: 15, color: "#666", textAlign: "center", marginBottom: 8 }}>
-                コンティニューしますか？
+                {(gameState?.score ?? 0) >= 1000 ? "いい感じ！もう一踏ん張り！" : "コツをつかんで再挑戦！"}
               </Text>
+              {bestScore > 0 && (gameState?.score ?? 0) < bestScore && (
+                <Text style={{ fontSize: 12, color: '#888', textAlign: 'center', marginBottom: 4 }}>
+                  ベストまで あと {(bestScore - (gameState?.score ?? 0)).toLocaleString()} 点
+                </Text>
+              )}
+              {(gameState?.score ?? 0) >= bestScore && bestScore > 0 && (
+                <Text style={{ fontSize: 14, fontWeight: 'bold', color: '#FFD700', textAlign: 'center', marginBottom: 4 }}>
+                  BEST NEW RECORD!
+                </Text>
+              )}
               {!continueUsed ? (
                 <>
                   <TouchableOpacity
-                    style={[styles.pauseMenuButton, { backgroundColor: "#FF6B35" }]}
+                    style={[styles.pauseMenuButton, { backgroundColor: walletCoins >= 100 ? "#FF6B35" : "#aaa" }]}
                     onPress={async () => {
                       const state = useGameStore.getState();
                       const CONTINUE_COST = 100;
@@ -408,14 +437,16 @@ export default function GameScreen() {
                         setShowContinueModal(false);
                         continueFromReward();
                       } else {
-                        Alert.alert("コイン不足", `コンティニューには🪙${CONTINUE_COST}枚必要です\n（現在: ${coins}枚）`);
+                        Alert.alert("コイン不足", `コンティニューには🪙${CONTINUE_COST}枚必要です\n（現在: ${coins}枚）\n\nプレイを重ねてコインを貯めよう！`);
                       }
                     }}
                   >
-                    <Text style={styles.pauseMenuButtonText}>🪙 コイン100枚で続ける</Text>
+                    <Text style={styles.pauseMenuButtonText}>COIN 100枚で続ける</Text>
                   </TouchableOpacity>
                   <Text style={{ fontSize: 11, color: "#999", marginTop: 4, textAlign: "center" }}>
-                    コインはゲームプレイで獲得できます
+                    {walletCoins >= 100
+                      ? `現在 COIN:${walletCoins}枚 → 残り${walletCoins - 100}枚`
+                      : `現在 COIN:${walletCoins}枚（あと${100 - walletCoins}枚でコンティニュー可！）`}
                   </Text>
                 </>
               ) : (
@@ -431,7 +462,7 @@ export default function GameScreen() {
                 }}
               >
                 <Text style={{ color: "#666", textAlign: "center", fontSize: 16 }}>
-                  結果を見る
+                  結果を見る →
                 </Text>
               </TouchableOpacity>
             </View>
@@ -442,7 +473,7 @@ export default function GameScreen() {
         <Modal visible={showChunkyShare} transparent animationType="fade">
           <View style={styles.pauseOverlay}>
             <View style={styles.pauseMenu}>
-              <Text style={{ fontSize: 28, textAlign: "center", marginBottom: 8 }}>👑</Text>
+              <Text style={{ fontSize: 28, textAlign: "center", marginBottom: 8 }}>★</Text>
               <Text style={[styles.pauseTitle, { fontSize: 18 }]}>ずんぐりネコ誕生！</Text>
               {chunkyRank && (
                 <View style={{ backgroundColor: chunkyRank.color + '33', borderWidth: 2, borderColor: chunkyRank.color, borderRadius: 12, paddingHorizontal: 20, paddingVertical: 8, marginBottom: 8 }}>
@@ -482,7 +513,7 @@ export default function GameScreen() {
                 }}
                 style={{ marginTop: 12 }}
               >
-                <Text style={{ color: '#666', fontSize: 14, textAlign: 'center' }}>📢 シェアする</Text>
+                <Text style={{ color: '#666', fontSize: 14, textAlign: 'center' }}>シェアする</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -524,7 +555,7 @@ const styles = StyleSheet.create({
   },
   mergeCounter: {
     position: "absolute",
-    top: 52,
+    top: 72,
     right: 16,
     backgroundColor: "rgba(255,215,0,0.9)",
     borderRadius: 12,
@@ -564,7 +595,7 @@ const styles = StyleSheet.create({
   },
   pauseButton: {
     position: "absolute",
-    top: 50,
+    top: 64,
     right: 16,
     width: 50,
     height: 50,

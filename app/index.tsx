@@ -13,6 +13,7 @@ import { useDailyChallenge } from "../src/hooks/useDailyChallenge";
 import { DailyBadge } from "../src/components/DailyBadge";
 import { formatScore, formatHeight } from "../src/utils/format";
 import { COLORS } from "../src/constants/colors";
+import { CatTowerSVG } from "../src/components/CatTowerSVG";
 
 export default function TitleScreen() {
   const router = useRouter();
@@ -71,7 +72,7 @@ export default function TitleScreen() {
   if (!initialized) {
     return (
       <View style={[styles.container, styles.loading]}>
-        <Text style={styles.loadingText}>🐱 Loading...</Text>
+        <Text style={styles.loadingText}>Loading...</Text>
       </View>
     );
   }
@@ -82,7 +83,7 @@ export default function TitleScreen() {
       <Animated.View
         style={[styles.towerContainer, { transform: [{ translateY: catBounce }] }]}
       >
-        <Text style={styles.catTower}>{"  🐱  \n 🐱🐱 \n🐱🐱🐱"}</Text>
+        <CatTowerSVG width={180} height={200} />
         <View style={styles.towerBase} />
       </Animated.View>
 
@@ -107,22 +108,22 @@ export default function TitleScreen() {
         onPress={() => router.push("/game?daily=true")}
         activeOpacity={0.8}
       >
-        <Text style={styles.dailyButtonText}>📅 デイリー</Text>
+        <Text style={styles.dailyButtonText}>デイリー</Text>
         <DailyBadge isCompleted={isCompleted} />
       </TouchableOpacity>
 
       {/* Best Score */}
       <View style={styles.statsContainer}>
         <Text style={styles.statsText}>
-          🏆 Best: {formatScore(stats.bestScore)}
+          Best: {formatScore(stats.bestScore)}
         </Text>
         <Text style={styles.statsText}>
-          📏 Max: {formatHeight(stats.bestHeight)}
+          Max: {formatHeight(stats.bestHeight)}
         </Text>
         {stats.currentStreak >= 2 && (
           <View style={styles.streakBadge}>
             <Text style={styles.streakBadgeText}>
-              🔥 {stats.currentStreak}日連続！
+              {stats.currentStreak}日連続プレイ
             </Text>
           </View>
         )}
@@ -137,7 +138,7 @@ export default function TitleScreen() {
             borderColor: "rgba(255,215,0,0.6)",
           }}>
             <Text style={{ fontSize: 14, fontWeight: "bold", color: "#FFD700" }}>
-              👑 ずんぐりネコ達成済み！
+              ★ ずんぐりネコ達成済み！
             </Text>
           </View>
         )}
@@ -148,7 +149,7 @@ export default function TitleScreen() {
             borderWidth: 1, borderColor: "rgba(255,165,0,0.4)",
           }}>
             <Text style={{ fontSize: 13, color: "#FFA500", textAlign: "center" }}>
-              🐾 ずんぐりネコまであと{stepsToChunky}段階の進化！
+              ずんぐりネコまであと{stepsToChunky}段階の進化！
             </Text>
           </View>
         )}
@@ -156,7 +157,7 @@ export default function TitleScreen() {
 
       {/* Coin Balance */}
       <TouchableOpacity onPress={() => router.push('/shop')} style={{ marginTop: 8, flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-        <Text style={{ fontSize: 14, color: '#888' }}>🪙 {walletCoins}枚</Text>
+        <Text style={{ fontSize: 14, color: '#888' }}>COIN: {walletCoins}枚</Text>
       </TouchableOpacity>
 
       {/* Footer Buttons */}
@@ -165,19 +166,19 @@ export default function TitleScreen() {
           style={styles.footerButton}
           onPress={() => router.push("/collection")}
         >
-          <Text style={styles.footerButtonText}>📚 図鑑</Text>
+          <Text style={styles.footerButtonText}>図鑑</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.footerButton}
           onPress={() => router.push("/shop")}
         >
-          <Text style={styles.footerButtonText}>🛍 ショップ</Text>
+          <Text style={styles.footerButtonText}>ショップ</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.footerButton}
           onPress={() => router.push("/settings")}
         >
-          <Text style={styles.footerButtonText}>⚙ 設定</Text>
+          <Text style={styles.footerButtonText}>設定</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
