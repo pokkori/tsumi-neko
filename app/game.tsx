@@ -37,6 +37,13 @@ const TUTORIAL_KEY = "@tsumineko/tutorial_seen";
 const EVOLUTION_ORDER = ["tiny","round","long","flat","loaf","triangle","curled","fat","stretchy","chunky"];
 const CHUNKY_INDEX = EVOLUTION_ORDER.length - 1; // 9
 
+const calcChunkyRank = (mergeCount: number, score: number): { rank: "S" | "A" | "B" | "C"; label: string; color: string } => {
+  if (mergeCount >= 3 && score >= 5000) return { rank: "S", label: "速攻3合体・高スコアの鬼！", color: "#FFD700" };
+  if (mergeCount >= 2 && score >= 2000) return { rank: "A", label: "手際よく合体達成！", color: "#C0C0C0" };
+  if (mergeCount >= 1 && score >= 500) return { rank: "B", label: "ずんぐり誕生！", color: "#CD7F32" };
+  return { rank: "C", label: "まずは合体マスターへ！", color: "#888888" };
+};
+
 export default function GameScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ daily?: string }>();
@@ -63,6 +70,7 @@ export default function GameScreen() {
   const [showTutorial, setShowTutorial] = useState(false);
   const [showChunkyBorn, setShowChunkyBorn] = useState(false);
   const [showChunkyShare, setShowChunkyShare] = useState(false);
+  const [chunkyRank, setChunkyRank] = useState<{ rank: "S" | "A" | "B" | "C"; label: string; color: string } | null>(null);
   const [showContinueModal, setShowContinueModal] = useState(false);
   const [continueUsed, setContinueUsed] = useState(false);
   const [personalityToast, setPersonalityToast] = useState<string | null>(null);
@@ -370,8 +378,11 @@ export default function GameScreen() {
           visible={showChunkyBorn}
           onComplete={() => {
             setShowChunkyBorn(false);
+            setChunkyRank(calcChunkyRank(gameState?.mergeCount ?? 0, gameState?.score ?? 0));
             setShowChunkyShare(true);
           }}
+          mergeCount={gameState?.mergeCount ?? 0}
+          score={gameState?.score ?? 0}
         />
 
         {/* Continue Modal */}
@@ -433,6 +444,12 @@ export default function GameScreen() {
             <View style={styles.pauseMenu}>
               <Text style={{ fontSize: 28, textAlign: "center", marginBottom: 8 }}>👑</Text>
               <Text style={[styles.pauseTitle, { fontSize: 18 }]}>ずんぐりネコ誕生！</Text>
+              {chunkyRank && (
+                <View style={{ backgroundColor: chunkyRank.color + '33', borderWidth: 2, borderColor: chunkyRank.color, borderRadius: 12, paddingHorizontal: 20, paddingVertical: 8, marginBottom: 8 }}>
+                  <Text style={{ fontSize: 28, fontWeight: 'bold', color: chunkyRank.color, textAlign: 'center' }}>ランク {chunkyRank.rank}</Text>
+                  <Text style={{ fontSize: 12, color: '#444', textAlign: 'center', marginTop: 2 }}>{chunkyRank.label}</Text>
+                </View>
+              )}
               <Text style={{ fontSize: 14, color: '#888', marginBottom: 4 }}>
                 スコア: {(gameState?.score ?? 0).toLocaleString()}
               </Text>

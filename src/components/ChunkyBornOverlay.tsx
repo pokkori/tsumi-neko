@@ -14,9 +14,11 @@ const STAR_CONFIGS = Array.from({ length: 20 }, (_, i) => ({
 interface ChunkyBornOverlayProps {
   visible: boolean;
   onComplete: () => void;
+  mergeCount: number;
+  score: number;
 }
 
-export const ChunkyBornOverlay: React.FC<ChunkyBornOverlayProps> = ({ visible, onComplete }) => {
+export const ChunkyBornOverlay: React.FC<ChunkyBornOverlayProps> = ({ visible, onComplete, mergeCount, score }) => {
   const bgOpacity = useRef(new Animated.Value(0)).current;
   const crownScale = useRef(new Animated.Value(0)).current;
   const textTranslateY = useRef(new Animated.Value(60)).current;
@@ -79,6 +81,9 @@ export const ChunkyBornOverlay: React.FC<ChunkyBornOverlayProps> = ({ visible, o
       });
     });
   }, [visible]);
+
+  const rank = mergeCount >= 3 && score >= 5000 ? "S" : mergeCount >= 2 && score >= 2000 ? "A" : mergeCount >= 1 ? "B" : "C";
+  const rankColor = rank === "S" ? "#FFD700" : rank === "A" ? "#C0C0C0" : rank === "B" ? "#CD7F32" : "#ffffff";
 
   if (!visible) return null;
 
@@ -144,6 +149,7 @@ export const ChunkyBornOverlay: React.FC<ChunkyBornOverlayProps> = ({ visible, o
       >
         <Text style={styles.titleText}>ずんぐりネコ誕生！</Text>
         <Text style={styles.subtitleText}>最高進化達成🎉</Text>
+        <Text style={{ fontSize: 28, fontWeight: 'bold', color: rankColor, marginTop: 8, textShadowColor: 'rgba(0,0,0,0.9)', textShadowOffset: { width: 1, height: 1 }, textShadowRadius: 4 }}>ランク {rank}</Text>
       </Animated.View>
     </Animated.View>
   );

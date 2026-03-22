@@ -258,11 +258,12 @@ export async function shareResult(params: {
   const chunkyMark = maxEvolution === "chunky" ? "👑ずんぐりネコ達成！ " : "";
   const emojiGrid = generateEmojiGrid(shapesUsed, mergeCount, catCount);
   const rankTitle = (RANK_TITLES.find(([threshold]) => score >= threshold) ?? RANK_TITLES[RANK_TITLES.length - 1])[1];
+  const gameRankStr = score >= 8000 ? "S" : score >= 4000 ? "A" : score >= 1500 ? "B" : "C";
   const hashtags = maxEvolution === "chunky"
     ? "#つみネコ #ねこ #StackCats #パズルゲーム #ずんぐりネコ"
     : "#つみネコ #ねこ #StackCats #パズルゲーム";
   const text = [
-    `【つみネコ🐱】${rankTitle} | ${catCount}匹 | ${height.toFixed(1)}m`,
+    `【つみネコ🐱】ランク${gameRankStr} | ${catCount}匹 | ${height.toFixed(1)}m`,
     `${chunkyMark}${recordMark}スコア: ${score.toLocaleString()}`,
     "",
     emojiGrid,

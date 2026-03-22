@@ -146,8 +146,9 @@ export const MergeEffect: React.FC<MergeEffectProps> = ({ mergeEvent, cameraY })
     lastTimestamp.current = mergeEvent.timestamp;
     setActiveEvent(mergeEvent);
 
+    const isChunky = mergeEvent.toShapeId === "chunky";
     const isLargeCat = mergeEvent.evolutionIndex >= 6;
-    const particleCount = isLargeCat ? 16 : 10;
+    const particleCount = isChunky ? 20 : isLargeCat ? 16 : 10;
     setParticles(generateParticles(particleCount));
 
     // Reset all animations
@@ -175,7 +176,7 @@ export const MergeEffect: React.FC<MergeEffectProps> = ({ mergeEvent, cameraY })
       }),
     ]).start(() => {
       // Phase 2: Flash (instant)
-      flashAnim.setValue(isLargeCat ? 0.7 : 0.4);
+      flashAnim.setValue(isChunky ? 0.95 : isLargeCat ? 0.7 : 0.4);
 
       Animated.parallel([
         // Flash fade
@@ -233,6 +234,10 @@ export const MergeEffect: React.FC<MergeEffectProps> = ({ mergeEvent, cameraY })
 
   if (!activeEvent) return null;
 
+  const isChunky = activeEvent?.toShapeId === "chunky";
+  const isLargeCat = (activeEvent?.evolutionIndex ?? 0) >= 6;
+  const flashColor = isChunky ? "rgba(255,215,0,0.6)" : isLargeCat ? "rgba(255,255,150,0.5)" : "rgba(255,255,200,0.4)";
+
   const newShape = CAT_SHAPES.find((s) => s.id === activeEvent.toShapeId);
   const shapeName = STAGE_NAMES[activeEvent.toShapeId] || newShape?.name || "";
   const eventX = activeEvent.x;
@@ -249,6 +254,7 @@ export const MergeEffect: React.FC<MergeEffectProps> = ({ mergeEvent, cameraY })
         style={[
           styles.flashOverlay,
           { opacity: flashAnim },
+          { backgroundColor: flashColor },
         ]}
         pointerEvents="none"
       />
@@ -320,8 +326,13 @@ export const MergeEffect: React.FC<MergeEffectProps> = ({ mergeEvent, cameraY })
         style={[
           styles.bounceRing,
           {
-            left: eventX - 40,
-            top: eventY - 40,
+            left: isChunky ? eventX - 80 : isLargeCat ? eventX - 60 : eventX - 40,
+            top: isChunky ? eventY - 80 : isLargeCat ? eventY - 60 : eventY - 40,
+            width: isChunky ? 160 : isLargeCat ? 120 : 80,
+            height: isChunky ? 160 : isLargeCat ? 120 : 80,
+            borderRadius: isChunky ? 80 : isLargeCat ? 60 : 40,
+            borderWidth: isChunky ? 5 : 3,
+            borderColor: isChunky ? "rgba(255,215,0,1.0)" : isLargeCat ? "rgba(255,215,0,0.8)" : "rgba(255,215,0,0.6)",
             opacity: bounceOpacity,
             transform: [{ scale: bounceScale }],
           },
@@ -342,7 +353,9 @@ export const MergeEffect: React.FC<MergeEffectProps> = ({ mergeEvent, cameraY })
         ]}
         pointerEvents="none"
       >
-        <Text style={styles.mergeText}>{"MERGE!"}</Text>
+        <Text style={[styles.mergeText, isChunky && { fontSize: 36, color: '#FFD700' }]}>
+          {isChunky ? "CHUNKY!!" : "MERGE!"}
+        </Text>
         <Text style={styles.arrowText}>{">>>"}</Text>
         <Text style={styles.shapeNameText}>{shapeName}</Text>
       </Animated.View>

@@ -46,6 +46,14 @@ export default function ResultScreen() {
     ? (params.shapesUsed.split(",").filter(Boolean) as CatShapeId[])
     : [];
 
+  const GAME_RANK_THRESHOLDS = [
+    { threshold: 8000, rank: "S", color: "#FFD700", label: "スコアマスター！" },
+    { threshold: 4000, rank: "A", color: "#C0C0C0", label: "ネコ積み達人" },
+    { threshold: 1500, rank: "B", color: "#CD7F32", label: "なかなかの腕前" },
+    { threshold: 0, rank: "C", color: "#888888", label: "次は上を目指せ！" },
+  ] as const;
+  const gameRank = GAME_RANK_THRESHOLDS.find(r => score >= r.threshold) ?? GAME_RANK_THRESHOLDS[3];
+
   // maxEvolutionをshapesUsedから即座に計算（useEffectより前で確定させる）
   const maxEvolution: string = (() => {
     if (shapesUsed.length === 0) return "";
@@ -157,6 +165,11 @@ export default function ResultScreen() {
         ]}
       >
         <Text style={styles.gameOverText}>GAME OVER</Text>
+
+        <View style={{ backgroundColor: gameRank.color + '22', borderWidth: 2, borderColor: gameRank.color, borderRadius: 16, paddingHorizontal: 32, paddingVertical: 10, marginBottom: 16 }}>
+          <Text style={{ fontSize: 40, fontWeight: 'bold', color: gameRank.color, textAlign: 'center' }}>ランク {gameRank.rank}</Text>
+          <Text style={{ fontSize: 13, color: '#ccc', textAlign: 'center', marginTop: 2 }}>{gameRank.label}</Text>
+        </View>
 
         {isNewRecord && (
           <Animated.View
@@ -302,6 +315,19 @@ export default function ResultScreen() {
         >
           <Text style={styles.homeButtonText}>タイトルに戻る</Text>
         </TouchableOpacity>
+
+        {Platform.OS === "web" && (
+          <TouchableOpacity
+            style={{ marginTop: 16, backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: 12, paddingHorizontal: 20, paddingVertical: 12, borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)' }}
+            onPress={() => {
+              if (typeof window !== 'undefined') {
+                window.open('https://tsumi-neko.vercel.app/shop', '_blank');
+              }
+            }}
+          >
+            <Text style={{ color: '#FFD700', fontSize: 13, textAlign: 'center' }}>🛍 コインを買ってずんぐりネコを目指す</Text>
+          </TouchableOpacity>
+        )}
       </Animated.View>
     </SafeAreaView>
   );
