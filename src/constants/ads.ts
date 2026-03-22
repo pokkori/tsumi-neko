@@ -1,15 +1,15 @@
 export const AD_CONFIG = {
   BANNER_ID: {
-    ios: "ca-app-pub-XXXXXXXXXXXXXXXX/YYYYYYYYYY",
-    android: "ca-app-pub-XXXXXXXXXXXXXXXX/YYYYYYYYYY",
+    ios: "ca-app-pub-3940256099942544/2934735716",
+    android: "ca-app-pub-3940256099942544/6300978111",
   },
   INTERSTITIAL_ID: {
-    ios: "ca-app-pub-XXXXXXXXXXXXXXXX/YYYYYYYYYY",
-    android: "ca-app-pub-XXXXXXXXXXXXXXXX/YYYYYYYYYY",
+    ios: "ca-app-pub-3940256099942544/4411468910",
+    android: "ca-app-pub-3940256099942544/1033173712",
   },
   REWARD_ID: {
-    ios: "ca-app-pub-XXXXXXXXXXXXXXXX/YYYYYYYYYY",
-    android: "ca-app-pub-XXXXXXXXXXXXXXXX/YYYYYYYYYY",
+    ios: "ca-app-pub-3940256099942544/1712485313",
+    android: "ca-app-pub-3940256099942544/5224354917",
   },
   INTERSTITIAL_INTERVAL: 3,
   REWARD_COOLDOWN_MS: 300_000,

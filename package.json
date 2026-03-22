@@ -6,7 +6,8 @@
     "start": "expo start",
     "android": "expo start --android",
     "ios": "expo start --ios",
-    "web": "expo start --web"
+    "web": "expo start --web",
+    "build": "npx expo export --platform web && node scripts/inject-ogp.js"
   },
   "dependencies": {
     "@expo/metro-runtime": "~55.0.6",
@@ -37,6 +38,7 @@
   "devDependencies": {
     "@types/matter-js": "^0.20.2",
     "@types/react": "~19.2.2",
+    "canvas": "^3.2.2",
     "typescript": "~5.9.2"
   },
   "private": true
