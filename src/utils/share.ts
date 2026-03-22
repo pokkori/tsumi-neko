@@ -34,6 +34,61 @@ export function generateEmojiGrid(
 }
 
 /**
+ * Generate a 1080x1920 vertical share image for TikTok/Instagram Stories
+ */
+export async function generateVerticalShareImage(params: {
+  score: number;
+  maxEvolution?: string;
+}): Promise<string | null> {
+  if (Platform.OS !== "web") return null;
+
+  try {
+    const canvas = document.createElement("canvas");
+    const W = 1080;
+    const H = 1920;
+    canvas.width = W;
+    canvas.height = H;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return null;
+
+    // 背景グラデーション
+    const grad = ctx.createLinearGradient(0, 0, 0, H);
+    grad.addColorStop(0, "#FF6B35");
+    grad.addColorStop(1, "#FF8C55");
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, W, H);
+
+    // タイトル
+    ctx.fillStyle = "#fff";
+    ctx.font = "bold 120px sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText("🐱 つみネコ", W / 2, 300);
+
+    // スコア
+    ctx.font = "bold 200px sans-serif";
+    ctx.fillText(params.score.toLocaleString(), W / 2, H / 2);
+
+    ctx.font = "60px sans-serif";
+    ctx.fillText("点", W / 2, H / 2 + 100);
+
+    // 最高進化
+    if (params.maxEvolution) {
+      ctx.font = "120px sans-serif";
+      ctx.fillText(params.maxEvolution, W / 2, H / 2 + 280);
+    }
+
+    // ハッシュタグ
+    ctx.font = "50px sans-serif";
+    ctx.fillStyle = "rgba(255,255,255,0.85)";
+    ctx.fillText("#つみネコ #ネコゲーム #StackCats", W / 2, H - 200);
+
+    return canvas.toDataURL("image/png");
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Generate a 1200x630 OGP share image using html2canvas (Web) or Canvas API
  */
 export async function generateShareImage(params: {
@@ -219,7 +274,9 @@ export async function shareResult(params: {
 
   // Try to generate and share image on web
   if (Platform.OS === "web") {
-    const imageDataUrl = await generateShareImage({
+    // 縦型画像を優先（TikTok/Instagram Stories向け）
+    const verticalDataUrl = await generateVerticalShareImage({ score, maxEvolution });
+    const imageDataUrl = verticalDataUrl ?? await generateShareImage({
       score,
       height,
       catCount,

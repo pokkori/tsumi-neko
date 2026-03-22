@@ -60,6 +60,8 @@ export default function GameScreen() {
   const [showTutorial, setShowTutorial] = useState(false);
   const [showChunkyBorn, setShowChunkyBorn] = useState(false);
   const [showChunkyShare, setShowChunkyShare] = useState(false);
+  const [showContinueModal, setShowContinueModal] = useState(false);
+  const pendingResultParams = useRef<Record<string, string> | null>(null);
 
   // PanResponder for drag control
   const panResponder = useRef(
@@ -121,31 +123,37 @@ export default function GameScreen() {
     };
   }, [started, showTutorial]);
 
+  const navigateToResult = useCallback(() => {
+    if (pendingResultParams.current) {
+      router.replace({
+        pathname: "/result",
+        params: pendingResultParams.current,
+      });
+    }
+  }, [router]);
+
   useEffect(() => {
     if (gameState?.phase === "gameover" && started) {
       stopBGM();
-      // Navigate to result
       const finalState = gameState;
       if (isDaily) {
         recordAttempt(finalState.score);
       }
       const coinsEarned = Math.floor(finalState.score / 100) + (finalState.mergeCount ?? 0) * 2;
       useGameStore.getState().addCoins(coinsEarned);
+      pendingResultParams.current = {
+        score: String(finalState.score),
+        height: String(finalState.height),
+        catCount: String(finalState.catCount),
+        maxCombo: String(finalState.maxCombo),
+        isNewRecord: String(finalState.isNewRecord),
+        isDaily: String(isDaily),
+        mergeCount: String(finalState.mergeCount),
+        shapesUsed: finalState.shapesUsedInGame.join(","),
+        coinsEarned: String(coinsEarned),
+      };
       const timeout = setTimeout(() => {
-        router.replace({
-          pathname: "/result",
-          params: {
-            score: String(finalState.score),
-            height: String(finalState.height),
-            catCount: String(finalState.catCount),
-            maxCombo: String(finalState.maxCombo),
-            isNewRecord: String(finalState.isNewRecord),
-            isDaily: String(isDaily),
-            mergeCount: String(finalState.mergeCount),
-            shapesUsed: finalState.shapesUsedInGame.join(","),
-            coinsEarned: String(coinsEarned),
-          },
-        });
+        setShowContinueModal(true);
       }, 500);
       return () => clearTimeout(timeout);
     }
@@ -332,6 +340,39 @@ export default function GameScreen() {
           }}
         />
 
+        {/* Continue Modal */}
+        <Modal visible={showContinueModal} transparent animationType="fade">
+          <View style={styles.pauseOverlay}>
+            <View style={styles.pauseMenu}>
+              <Text style={{ fontSize: 28, textAlign: "center", marginBottom: 4 }}>😿</Text>
+              <Text style={styles.pauseTitle}>ゲームオーバー</Text>
+              <Text style={{ fontSize: 15, color: "#666", textAlign: "center", marginBottom: 8 }}>
+                コンティニューしますか？
+              </Text>
+              <TouchableOpacity
+                style={[styles.pauseMenuButton, { backgroundColor: "#FF6B35" }]}
+                onPress={() => {
+                  setShowContinueModal(false);
+                  continueFromReward();
+                }}
+              >
+                <Text style={styles.pauseMenuButtonText}>🐱 続ける（広告）</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={{ marginTop: 16 }}
+                onPress={() => {
+                  setShowContinueModal(false);
+                  navigateToResult();
+                }}
+              >
+                <Text style={{ color: "#666", textAlign: "center", fontSize: 16 }}>
+                  結果を見る
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
+
         {/* Chunky Share Modal */}
         <Modal visible={showChunkyShare} transparent animationType="fade">
           <View style={styles.pauseOverlay}>
@@ -446,8 +487,8 @@ const styles = StyleSheet.create({
   },
   pauseButton: {
     position: "absolute",
-    bottom: 30,
-    alignSelf: "center",
+    top: 50,
+    right: 16,
     width: 50,
     height: 50,
     borderRadius: 25,

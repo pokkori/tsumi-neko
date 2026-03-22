@@ -7,6 +7,7 @@ import {
   Animated,
   SafeAreaView,
   Platform,
+  Alert,
 } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { formatScore, formatHeight } from "../src/utils/format";
@@ -15,6 +16,7 @@ import { loadData } from "../src/utils/storage";
 import { COLORS } from "../src/constants/colors";
 import { CatShapeId } from "../src/types";
 import { CAT_EMOJI, CAT_SHAPES } from "../src/data/catShapes";
+import { useGameStore } from "../src/stores/gameStore";
 
 export default function ResultScreen() {
   const router = useRouter();
@@ -60,6 +62,7 @@ export default function ResultScreen() {
 
   const [currentStreak, setCurrentStreak] = useState<number>(0);
   const [previewDataUrl, setPreviewDataUrl] = useState<string | null>(null);
+  const [skinUnlockMessage, setSkinUnlockMessage] = useState<string | null>(null);
 
   // 今回解禁された最高進化ランクのバッジ表示（useEffectより前で確定させる）
   const evolutionBadge = maxEvolution ? `最高進化 ${maxEvolution} 解禁！` : null;
@@ -74,6 +77,23 @@ export default function ResultScreen() {
       setCurrentStreak(stats.currentStreak);
     });
   }, []);
+
+  // スキン解放チェック（スコア5000点以上でペルシャ解放）
+  useEffect(() => {
+    if (score >= 5000) {
+      const store = useGameStore.getState();
+      const alreadyUnlocked = store.unlockedSkins.includes("persian");
+      if (!alreadyUnlocked) {
+        store.unlockSkin("persian").then(() => {
+          setSkinUnlockMessage("🎉 スキン解放！ペルシャネコが使えるようになった！");
+          Alert.alert(
+            "🎉 スキン解放！",
+            "ペルシャネコのスキンが解放されました！\nショップで確認してね！"
+          );
+        });
+      }
+    }
+  }, [score]);
 
   useEffect(() => {
     if (Platform.OS === "web") {
@@ -203,6 +223,23 @@ export default function ResultScreen() {
               {'🌟'} {evolutionBadge}
             </Text>
           </Animated.View>
+        )}
+
+        {/* Skin Unlock Notification */}
+        {skinUnlockMessage && (
+          <View style={{
+            backgroundColor: "rgba(255,215,0,0.2)",
+            borderRadius: 12,
+            paddingHorizontal: 20,
+            paddingVertical: 10,
+            marginBottom: 12,
+            borderWidth: 1,
+            borderColor: "#FFD700",
+          }}>
+            <Text style={{ color: "#FFD700", fontWeight: "bold", textAlign: "center", fontSize: 16 }}>
+              {skinUnlockMessage}
+            </Text>
+          </View>
         )}
 
         {/* Streak Display */}

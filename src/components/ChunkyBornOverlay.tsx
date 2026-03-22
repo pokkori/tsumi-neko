@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from "react";
-import { View, Text, StyleSheet, Animated, Dimensions } from "react-native";
+import { View, Text, StyleSheet, Animated, Dimensions, ViewStyle } from "react-native";
 
 const { width: SW, height: SH } = Dimensions.get("window");
 
@@ -23,6 +23,8 @@ export const ChunkyBornOverlay: React.FC<ChunkyBornOverlayProps> = ({ visible, o
   const textOpacity = useRef(new Animated.Value(0)).current;
   const overlayOpacity = useRef(new Animated.Value(1)).current;
   const starOpacities = useRef(STAR_CONFIGS.map(() => new Animated.Value(0))).current;
+  const ringAnim = useRef(new Animated.Value(0)).current;
+  const ringScale = useRef(new Animated.Value(0.4)).current;
 
   useEffect(() => {
     if (!visible) {
@@ -32,6 +34,8 @@ export const ChunkyBornOverlay: React.FC<ChunkyBornOverlayProps> = ({ visible, o
       textOpacity.setValue(0);
       overlayOpacity.setValue(1);
       starOpacities.forEach(a => a.setValue(0));
+      ringAnim.setValue(0);
+      ringScale.setValue(0.4);
       return;
     }
 
@@ -46,6 +50,12 @@ export const ChunkyBornOverlay: React.FC<ChunkyBornOverlayProps> = ({ visible, o
         tension: 150,
         useNativeDriver: true,
       }).start();
+
+      // 3重リングアニメーション
+      Animated.parallel([
+        Animated.timing(ringAnim, { toValue: 1, duration: 600, useNativeDriver: true }),
+        Animated.spring(ringScale, { toValue: 1, friction: 4, tension: 80, useNativeDriver: true }),
+      ]).start();
 
       Animated.parallel([
         Animated.timing(textTranslateY, { toValue: 0, duration: 500, useNativeDriver: true }),
@@ -95,6 +105,28 @@ export const ChunkyBornOverlay: React.FC<ChunkyBornOverlayProps> = ({ visible, o
           {cfg.emoji}
         </Animated.Text>
       ))}
+
+      {/* 3重リング */}
+      {([280, 240, 200] as const).map((size, i) => {
+        const colors = ["#FFD700", "#FFA500", "#FF6B35"];
+        const ringStyle: ViewStyle = {
+          position: "absolute",
+          width: size,
+          height: size,
+          borderRadius: size / 2,
+          borderWidth: 3,
+          borderColor: colors[i],
+        };
+        return (
+          <Animated.View
+            key={size}
+            style={[ringStyle, {
+              opacity: ringAnim,
+              transform: [{ scale: ringScale }],
+            }]}
+          />
+        );
+      })}
 
       <Animated.View style={[styles.center, { transform: [{ scale: crownScale }] }]}>
         <Text style={styles.crownEmoji}>👑</Text>
