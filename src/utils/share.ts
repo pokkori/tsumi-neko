@@ -39,6 +39,124 @@ export function generateEmojiGrid(
   return `${grid}${mergeInfo}\n使った猫: ${stageRow}`;
 }
 
+/** Canvas 2D でネコを描画（シェア画像用） */
+function drawCanvasCat(
+  ctx: CanvasRenderingContext2D,
+  cx: number,
+  cy: number,
+  size: number,
+  evolutionId?: string,
+) {
+  const colors: Record<string, { body: string; belly: string }> = {
+    tiny:    { body: '#F4C2C2', belly: '#FDEBD0' },
+    round:   { body: '#FFB347', belly: '#FFF0DC' },
+    long:    { body: '#87CEEB', belly: '#E0F4FF' },
+    flat:    { body: '#DDA0DD', belly: '#F5E6FF' },
+    loaf:    { body: '#98FB98', belly: '#E8FFE8' },
+    triangle:{ body: '#FF7F7F', belly: '#FFE8E8' },
+    curled:  { body: '#F0E68C', belly: '#FFFFF0' },
+    fat:     { body: '#20B2AA', belly: '#E0FFFF' },
+    stretchy:{ body: '#FF8C00', belly: '#FFE4B5' },
+    chunky:  { body: '#FF6B35', belly: '#FFF5E6' },
+  };
+  const c = colors[evolutionId ?? ''] ?? { body: '#FF6B35', belly: '#FFF5E6' };
+  const r = size / 2;
+
+  ctx.save();
+
+  // 胴体（楕円）
+  ctx.fillStyle = c.body;
+  ctx.beginPath();
+  ctx.ellipse(cx, cy + r * 0.3, r * 0.85, r * 0.7, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // 頭
+  ctx.fillStyle = c.body;
+  ctx.beginPath();
+  ctx.arc(cx, cy - r * 0.2, r * 0.65, 0, Math.PI * 2);
+  ctx.fill();
+
+  // 耳（三角）
+  ctx.fillStyle = c.body;
+  const earW = r * 0.35;
+  const earH = r * 0.45;
+  // 左耳
+  ctx.beginPath();
+  ctx.moveTo(cx - r * 0.45, cy - r * 0.65);
+  ctx.lineTo(cx - r * 0.45 - earW, cy - r * 0.65 - earH);
+  ctx.lineTo(cx - r * 0.1, cy - r * 0.65);
+  ctx.closePath();
+  ctx.fill();
+  // 右耳
+  ctx.beginPath();
+  ctx.moveTo(cx + r * 0.45, cy - r * 0.65);
+  ctx.lineTo(cx + r * 0.45 + earW, cy - r * 0.65 - earH);
+  ctx.lineTo(cx + r * 0.1, cy - r * 0.65);
+  ctx.closePath();
+  ctx.fill();
+
+  // お腹（楕円）
+  ctx.fillStyle = c.belly;
+  ctx.beginPath();
+  ctx.ellipse(cx, cy - r * 0.15, r * 0.35, r * 0.28, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // 目
+  ctx.fillStyle = '#1a1a2e';
+  ctx.beginPath();
+  ctx.arc(cx - r * 0.22, cy - r * 0.28, r * 0.09, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(cx + r * 0.22, cy - r * 0.28, r * 0.09, 0, Math.PI * 2);
+  ctx.fill();
+
+  // 目のハイライト
+  ctx.fillStyle = '#FFFFFF';
+  ctx.beginPath();
+  ctx.arc(cx - r * 0.19, cy - r * 0.31, r * 0.03, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(cx + r * 0.25, cy - r * 0.31, r * 0.03, 0, Math.PI * 2);
+  ctx.fill();
+
+  // 鼻
+  ctx.fillStyle = '#FF8FAB';
+  ctx.beginPath();
+  ctx.arc(cx, cy - r * 0.15, r * 0.06, 0, Math.PI * 2);
+  ctx.fill();
+
+  // ひげ
+  ctx.strokeStyle = 'rgba(0,0,0,0.3)';
+  ctx.lineWidth = r * 0.025;
+  ctx.lineCap = 'round';
+  [[cx - r * 0.06, cx - r * 0.55], [cx - r * 0.06, cx - r * 0.55], [cx + r * 0.06, cx + r * 0.55]].forEach(() => {});
+  // 左ひげ
+  for (let i = -1; i <= 1; i++) {
+    ctx.beginPath();
+    ctx.moveTo(cx - r * 0.06, cy - r * 0.12 + i * r * 0.08);
+    ctx.lineTo(cx - r * 0.55, cy - r * 0.18 + i * r * 0.1);
+    ctx.stroke();
+  }
+  // 右ひげ
+  for (let i = -1; i <= 1; i++) {
+    ctx.beginPath();
+    ctx.moveTo(cx + r * 0.06, cy - r * 0.12 + i * r * 0.08);
+    ctx.lineTo(cx + r * 0.55, cy - r * 0.18 + i * r * 0.1);
+    ctx.stroke();
+  }
+
+  // しっぽ
+  ctx.strokeStyle = c.body;
+  ctx.lineWidth = r * 0.15;
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(cx + r * 0.7, cy + r * 0.5);
+  ctx.quadraticCurveTo(cx + r * 1.3, cy + r * 0.2, cx + r * 1.1, cy - r * 0.1);
+  ctx.stroke();
+
+  ctx.restore();
+}
+
 /**
  * Generate a 1080x1920 vertical share image for TikTok/Instagram Stories
  */
@@ -60,33 +178,61 @@ export async function generateVerticalShareImage(params: {
     // 背景グラデーション
     const grad = ctx.createLinearGradient(0, 0, 0, H);
     grad.addColorStop(0, "#FF6B35");
-    grad.addColorStop(1, "#FF8C55");
+    grad.addColorStop(0.5, "#FF8C55");
+    grad.addColorStop(1, "#FFF5E6");
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, W, H);
 
+    // ネコイラスト（大きく中央上部に）
+    drawCanvasCat(ctx, W / 2, H * 0.28, 480, params.maxEvolution);
+
     // タイトル
     ctx.fillStyle = "#fff";
-    ctx.font = "bold 120px sans-serif";
+    ctx.font = "bold 100px sans-serif";
     ctx.textAlign = "center";
-    ctx.fillText("つみネコ", W / 2, 300);
+    ctx.shadowColor = "rgba(0,0,0,0.3)";
+    ctx.shadowBlur = 12;
+    ctx.fillText("つみネコ", W / 2, 180);
+    ctx.shadowBlur = 0;
+
+    // スコア背景カード
+    ctx.fillStyle = "rgba(255,255,255,0.2)";
+    ctx.beginPath();
+    if (typeof (ctx as any).roundRect === 'function') {
+      (ctx as any).roundRect(W / 2 - 400, H * 0.58, 800, 300, 30);
+    } else {
+      ctx.rect(W / 2 - 400, H * 0.58, 800, 300);
+    }
+    ctx.fill();
 
     // スコア
-    ctx.font = "bold 200px sans-serif";
-    ctx.fillText(params.score.toLocaleString(), W / 2, H / 2);
+    ctx.fillStyle = "#fff";
+    ctx.font = "bold 180px sans-serif";
+    ctx.shadowColor = "rgba(0,0,0,0.4)";
+    ctx.shadowBlur = 16;
+    ctx.fillText(params.score.toLocaleString(), W / 2, H * 0.58 + 210);
+    ctx.shadowBlur = 0;
+    ctx.font = "50px sans-serif";
+    ctx.fillText("点", W / 2, H * 0.58 + 280);
 
-    ctx.font = "60px sans-serif";
-    ctx.fillText("点", W / 2, H / 2 + 100);
-
-    // 最高進化
+    // 最高進化名
     if (params.maxEvolution) {
-      ctx.font = "120px sans-serif";
-      ctx.fillText(params.maxEvolution, W / 2, H / 2 + 280);
+      const evolutionName = CAT_SHAPES.find(c => c.id === params.maxEvolution)?.name ?? params.maxEvolution;
+      ctx.font = "bold 60px sans-serif";
+      ctx.fillStyle = "#FFD700";
+      ctx.shadowColor = "rgba(0,0,0,0.5)";
+      ctx.shadowBlur = 8;
+      ctx.fillText(`最高進化: ${evolutionName}`, W / 2, H * 0.9);
+      ctx.shadowBlur = 0;
     }
 
     // ハッシュタグ
-    ctx.font = "50px sans-serif";
+    ctx.font = "44px sans-serif";
     ctx.fillStyle = "rgba(255,255,255,0.85)";
-    ctx.fillText("#つみネコ #ネコゲーム #StackCats", W / 2, H - 200);
+    ctx.fillText("#つみネコ #ネコゲーム #StackCats", W / 2, H - 150);
+    ctx.font = "36px sans-serif";
+    ctx.fillStyle = "rgba(255,255,255,0.6)";
+    ctx.fillText("https://tsumi-neko.vercel.app", W / 2, H - 80);
 
     return canvas.toDataURL("image/png");
   } catch {
@@ -177,27 +323,25 @@ export async function generateShareImage(params: {
     }
 
     // Highest evolution cat drawing (右側に大きく表示)
-    if (params.maxEvolution) {
-      const catEmoji = CAT_EMOJI[params.maxEvolution as CatShapeId] ?? 'CAT';
-      const evolutionName = CAT_SHAPES.find(c => c.id === params.maxEvolution)?.name ?? params.maxEvolution;
-      // Evolution stage badge
+    {
+      const evolutionName = params.maxEvolution
+        ? (CAT_SHAPES.find(c => c.id === params.maxEvolution)?.name ?? params.maxEvolution)
+        : "ネコ";
+      // Evolution stage badge background
       ctx.fillStyle = 'rgba(255,255,255,0.12)';
       ctx.beginPath();
-      safeRoundRect(ctx, 820, 160, 340, 340, 20);
+      safeRoundRect(ctx, 820, 140, 340, 380, 20);
       ctx.fill();
-      // Evolution name (text instead of emoji for cross-platform compatibility)
-      ctx.font = 'bold 48px sans-serif';
-      ctx.fillStyle = '#FFD700';
-      ctx.textAlign = 'center';
-      ctx.fillText(evolutionName ?? "ずんぐりネコ", 990, 340);
-      // 金色の枠線を追加
       ctx.strokeStyle = '#FFD700';
-      ctx.lineWidth = 3;
-      ctx.strokeRect(825, 165, 330, 330);
+      ctx.lineWidth = 2;
+      ctx.strokeRect(822, 142, 336, 376);
+      // ネコSVGをCanvas 2Dで描画
+      drawCanvasCat(ctx, 990, 290, 220, params.maxEvolution);
       // Evolution label
       ctx.fillStyle = '#FFD700';
-      ctx.font = 'bold 28px sans-serif';
-      ctx.fillText(`最高進化: ${evolutionName}`, 990, 450);
+      ctx.font = 'bold 24px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(`最高進化: ${evolutionName}`, 990, 490);
     }
 
     // URL and Hashtags
