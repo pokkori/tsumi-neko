@@ -32,6 +32,7 @@ export interface CatShape {
   centerOfMass: PhysicsVertex;
   rarity: "common" | "uncommon" | "rare";
   spawnWeight: number;
+  personality?: string;
 }
 
 // ==========================================

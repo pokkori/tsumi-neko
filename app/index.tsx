@@ -18,6 +18,7 @@ export default function TitleScreen() {
   const router = useRouter();
   const stats = useGameStore((s) => s.stats);
   const initialized = useGameStore((s) => s.initialized);
+  const walletCoins = useGameStore((s) => s.wallet?.coins ?? 0);
   const achievements = useGameStore((s) => s.achievements);
   const hasChunky = achievements?.shapesUsed?.includes("chunky") ?? false;
   const { isCompleted } = useDailyChallenge();
@@ -152,6 +153,11 @@ export default function TitleScreen() {
           </View>
         )}
       </View>
+
+      {/* Coin Balance */}
+      <TouchableOpacity onPress={() => router.push('/shop')} style={{ marginTop: 8, flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+        <Text style={{ fontSize: 14, color: '#888' }}>🪙 {walletCoins}枚</Text>
+      </TouchableOpacity>
 
       {/* Footer Buttons */}
       <View style={styles.footer}>

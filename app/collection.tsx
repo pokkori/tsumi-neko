@@ -212,6 +212,11 @@ export default function CollectionScreen() {
                   <Text style={[styles.cardStatus, unlocked && styles.cardStatusUnlocked]}>
                     {unlocked ? "発見済" : "未発見"}
                   </Text>
+                  {unlocked && shape?.personality && (
+                    <Text style={{ fontSize: 9, color: '#888', textAlign: 'center', marginTop: 2, fontStyle: 'italic' }}>
+                      {shape.personality}
+                    </Text>
+                  )}
                 </View>
                 {idx < EVOLUTION_ORDER.length - 1 && (
                   <View style={styles.arrowContainer}>

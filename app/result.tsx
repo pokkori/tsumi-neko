@@ -30,6 +30,7 @@ export default function ResultScreen() {
     mergeCount: string;
     shapesUsed: string;
     coinsEarned: string;
+    dailyClear: string;
   }>();
 
   const score = parseInt(params.score || "0", 10);
@@ -40,6 +41,7 @@ export default function ResultScreen() {
   const isDaily = params.isDaily === "true";
   const mergeCount = parseInt(params.mergeCount || "0", 10);
   const coinsEarned = parseInt(params.coinsEarned || "0", 10);
+  const dailyClear = params.dailyClear === "true";
   const shapesUsed: CatShapeId[] = params.shapesUsed
     ? (params.shapesUsed.split(",").filter(Boolean) as CatShapeId[])
     : [];
@@ -168,6 +170,20 @@ export default function ResultScreen() {
           >
             <Text style={styles.newRecordText}>🎉 NEW RECORD! 🎉</Text>
           </Animated.View>
+        )}
+
+        {dailyClear && (
+          <View style={{
+            backgroundColor: "#1565C0",
+            paddingHorizontal: 24,
+            paddingVertical: 10,
+            borderRadius: 20,
+            marginBottom: 12,
+          }}>
+            <Text style={{ color: "#FFFFFF", fontSize: 16, fontWeight: "bold", textAlign: "center" }}>
+              📅 デイリーチャレンジ クリア！
+            </Text>
+          </View>
         )}
 
         {/* Score Card */}

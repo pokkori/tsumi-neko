@@ -29,6 +29,7 @@ import { ChunkyBornOverlay } from "../src/components/ChunkyBornOverlay";
 import { shareResult } from "../src/utils/share";
 import { PHYSICS } from "../src/constants/physics";
 import { COLORS } from "../src/constants/colors";
+import { CAT_SHAPES } from "../src/data/catShapes";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const TUTORIAL_KEY = "@tsumineko/tutorial_seen";
@@ -42,6 +43,7 @@ export default function GameScreen() {
   const isDaily = params.daily === "true";
 
   const settings = useGameStore((s) => s.settings);
+  const walletCoins = useGameStore((s) => s.wallet?.coins ?? 0);
   const { challenge, recordAttempt } = useDailyChallenge();
 
   // Build challenge config for daily mode
@@ -63,6 +65,7 @@ export default function GameScreen() {
   const [showChunkyShare, setShowChunkyShare] = useState(false);
   const [showContinueModal, setShowContinueModal] = useState(false);
   const [continueUsed, setContinueUsed] = useState(false);
+  const [personalityToast, setPersonalityToast] = useState<string | null>(null);
   const pendingResultParams = useRef<Record<string, string> | null>(null);
 
   // PanResponder for drag control
@@ -144,6 +147,7 @@ export default function GameScreen() {
       }
       const coinsEarned = Math.floor(finalState.score / 100) + (finalState.mergeCount ?? 0) * 2;
       useGameStore.getState().addCoins(coinsEarned);
+      const dailyClearFlag = isDaily && finalState.score >= challenge.targetScore;
       pendingResultParams.current = {
         score: String(finalState.score),
         height: String(finalState.height),
@@ -154,6 +158,7 @@ export default function GameScreen() {
         mergeCount: String(finalState.mergeCount),
         shapesUsed: finalState.shapesUsedInGame.join(","),
         coinsEarned: String(coinsEarned),
+        dailyClear: String(dailyClearFlag),
       };
       const timeout = setTimeout(() => {
         setShowContinueModal(true);
@@ -169,6 +174,20 @@ export default function GameScreen() {
     if (ev.toShapeId === "chunky" && ev.timestamp !== lastChunkyTimestamp.current) {
       lastChunkyTimestamp.current = ev.timestamp;
       setShowChunkyBorn(true);
+    }
+  }, [gameState?.lastMergeEvent?.timestamp]);
+
+  const lastPersonalityTimestamp = useRef(0);
+  useEffect(() => {
+    const ev = gameState?.lastMergeEvent;
+    if (!ev?.toShapeId) return;
+    if (ev.timestamp === lastPersonalityTimestamp.current) return;
+    lastPersonalityTimestamp.current = ev.timestamp;
+    const shape = CAT_SHAPES.find((s) => s.id === ev.toShapeId);
+    if (shape?.personality) {
+      setPersonalityToast(shape.personality);
+      const timer = setTimeout(() => setPersonalityToast(null), 800);
+      return () => clearTimeout(timer);
     }
   }, [gameState?.lastMergeEvent?.timestamp]);
 
@@ -217,6 +236,11 @@ export default function GameScreen() {
                 </Text>
               </View>
             )}
+
+            {/* Coin Mini Display */}
+            <View style={{ position: 'absolute', top: 52, left: 16, backgroundColor: 'rgba(0,0,0,0.25)', borderRadius: 10, paddingHorizontal: 8, paddingVertical: 3, zIndex: 10 }}>
+              <Text style={{ color: '#FFD700', fontSize: 11, fontWeight: 'bold' }}>🪙 {walletCoins}</Text>
+            </View>
 
             {/* Next Preview */}
             <CatPreview shapeId={gameState.nextShapeId} />
@@ -273,6 +297,13 @@ export default function GameScreen() {
                 </View>
               ) : null;
             })()}
+
+            {/* Personality Toast */}
+            {personalityToast && (
+              <View style={{ position: 'absolute', top: 130, alignSelf: 'center', backgroundColor: 'rgba(0,0,0,0.7)', borderRadius: 12, paddingHorizontal: 12, paddingVertical: 8, zIndex: 20 }}>
+                <Text style={{ color: '#fff', fontSize: 13 }}>{personalityToast}</Text>
+              </View>
+            )}
 
             {/* Combo Popup */}
             <ComboPopup combo={gameState.combo} />
@@ -402,8 +433,19 @@ export default function GameScreen() {
             <View style={styles.pauseMenu}>
               <Text style={{ fontSize: 28, textAlign: "center", marginBottom: 8 }}>👑</Text>
               <Text style={[styles.pauseTitle, { fontSize: 18 }]}>ずんぐりネコ誕生！</Text>
+              <Text style={{ fontSize: 14, color: '#888', marginBottom: 4 }}>
+                スコア: {(gameState?.score ?? 0).toLocaleString()}
+              </Text>
+              <Text style={{ fontSize: 14, color: '#888', marginBottom: 12 }}>
+                合体 {gameState?.mergeCount ?? 0}回達成
+              </Text>
               <TouchableOpacity
                 style={styles.pauseMenuButton}
+                onPress={() => setShowChunkyShare(false)}
+              >
+                <Text style={styles.pauseMenuButtonText}>つづける</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
                 onPress={async () => {
                   setShowChunkyShare(false);
                   const score = gameState?.score ?? 0;
@@ -421,14 +463,9 @@ export default function GameScreen() {
                     maxEvolution: "chunky",
                   });
                 }}
+                style={{ marginTop: 12 }}
               >
-                <Text style={styles.pauseMenuButtonText}>📢 シェアする</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.pauseMenuButton, styles.pauseMenuButtonSecondary]}
-                onPress={() => setShowChunkyShare(false)}
-              >
-                <Text style={styles.pauseMenuButtonText}>つづける</Text>
+                <Text style={{ color: '#666', fontSize: 14, textAlign: 'center' }}>📢 シェアする</Text>
               </TouchableOpacity>
             </View>
           </View>

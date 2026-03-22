@@ -54,6 +54,7 @@ export const CAT_SHAPES: CatShape[] = [
     centerOfMass: { x: 0, y: 5 },
     rarity: "common",
     spawnWeight: 18,
+    personality: "おっとり。落ち着きがある",
   },
   {
     id: "long",
@@ -78,6 +79,7 @@ export const CAT_SHAPES: CatShape[] = [
     centerOfMass: { x: 0, y: 3 },
     rarity: "common",
     spawnWeight: 15,
+    personality: "のんき。横に広いので安定する",
   },
   {
     id: "flat",
@@ -101,6 +103,7 @@ export const CAT_SHAPES: CatShape[] = [
     centerOfMass: { x: 0, y: 2 },
     rarity: "common",
     spawnWeight: 12,
+    personality: "冷静。薄くて積みやすいが滑る",
   },
   {
     id: "triangle",
@@ -122,6 +125,7 @@ export const CAT_SHAPES: CatShape[] = [
     centerOfMass: { x: 0, y: 8 },
     rarity: "uncommon",
     spawnWeight: 10,
+    personality: "気まぐれ。尖っているので傾きやすい",
   },
   {
     id: "fat",
@@ -147,6 +151,7 @@ export const CAT_SHAPES: CatShape[] = [
     centerOfMass: { x: 0, y: 5 },
     rarity: "uncommon",
     spawnWeight: 8,
+    personality: "グルメ。重くて下を安定させる",
   },
   {
     id: "tiny",
@@ -172,6 +177,7 @@ export const CAT_SHAPES: CatShape[] = [
     centerOfMass: { x: 0, y: 2 },
     rarity: "common",
     spawnWeight: 12,
+    personality: "やんちゃ。軽くて不安定だが小さく積みやすい",
   },
   {
     id: "loaf",
@@ -195,6 +201,7 @@ export const CAT_SHAPES: CatShape[] = [
     centerOfMass: { x: 0, y: 0 },
     rarity: "common",
     spawnWeight: 10,
+    personality: "マイペース。bread形で安定",
   },
   {
     id: "curled",
@@ -219,6 +226,7 @@ export const CAT_SHAPES: CatShape[] = [
     centerOfMass: { x: 0, y: 0 },
     rarity: "uncommon",
     spawnWeight: 7,
+    personality: "温厚。丸くてよく転がる",
   },
   {
     id: "stretchy",
@@ -242,6 +250,7 @@ export const CAT_SHAPES: CatShape[] = [
     centerOfMass: { x: 0, y: 0 },
     rarity: "rare",
     spawnWeight: 5,
+    personality: "のびのび。細長く配置が難しい",
   },
   {
     id: "chunky",
@@ -267,5 +276,6 @@ export const CAT_SHAPES: CatShape[] = [
     centerOfMass: { x: 0, y: 3 },
     rarity: "rare",
     spawnWeight: 3,
+    personality: "王様。圧倒的な重さで全体を安定させる",
   },
 ];
