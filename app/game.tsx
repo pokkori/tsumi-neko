@@ -15,7 +15,7 @@ import { useGameState } from "../src/hooks/useGameState";
 import { useGameStore } from "../src/stores/gameStore";
 import { useDailyChallenge } from "../src/hooks/useDailyChallenge";
 import { ChallengeConfig } from "../src/engine/GameLoop";
-import { resumeAudioContext, playBGM, stopBGM } from "../src/utils/sound";
+import { resumeAudioContext, playBGM, stopBGM, loadBGMAsync } from "../src/utils/sound";
 import { CatBody } from "../src/components/CatBody";
 import { ScoreDisplay } from "../src/components/ScoreDisplay";
 import { ComboPopup } from "../src/components/ComboPopup";
@@ -30,6 +30,7 @@ import { ChunkyBornOverlay } from "../src/components/ChunkyBornOverlay";
 import { shareResult } from "../src/utils/share";
 import { PHYSICS } from "../src/constants/physics";
 import { COLORS } from "../src/constants/colors";
+import { NEAR_CHUNKY_GAP } from "../src/constants/game";
 import { CAT_SHAPES } from "../src/data/catShapes";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
@@ -71,6 +72,8 @@ export default function GameScreen() {
   const [started, setStarted] = useState(false);
   const [showTutorial, setShowTutorial] = useState(false);
   const [showChunkyBorn, setShowChunkyBorn] = useState(false);
+  const [nearmissVisible, setNearmissVisible] = useState(false);
+  const [nearmissText, setNearmissText] = useState('');
   const [showChunkyShare, setShowChunkyShare] = useState(false);
   const [chunkyRank, setChunkyRank] = useState<{ rank: "S" | "A" | "B" | "C"; label: string; color: string } | null>(null);
   const [showContinueModal, setShowContinueModal] = useState(false);
@@ -133,6 +136,10 @@ export default function GameScreen() {
 
   // BGM control
   useEffect(() => {
+    loadBGMAsync();
+  }, []);
+
+  useEffect(() => {
     if (started && !showTutorial) {
       playBGM();
     }
@@ -188,6 +195,27 @@ export default function GameScreen() {
       setShowChunkyBorn(true);
     }
   }, [gameState?.lastMergeEvent?.timestamp]);
+
+  // Nearmiss: score approaching chunky threshold
+  const CHUNKY_SCORE_THRESHOLD = 3000;
+  const nearmissShownRef = useRef(false);
+  useEffect(() => {
+    const score = gameState?.score ?? 0;
+    const alreadyChunky = gameState?.lastMergeEvent?.toShapeId === 'chunky';
+    if (!alreadyChunky && !nearmissShownRef.current && score > 0) {
+      const gap = CHUNKY_SCORE_THRESHOLD - score;
+      if (gap > 0 && gap <= NEAR_CHUNKY_GAP) {
+        nearmissShownRef.current = true;
+        setNearmissText(`あと${gap}点でずんぐり！`);
+        setNearmissVisible(true);
+        const t = setTimeout(() => setNearmissVisible(false), 2000);
+        return () => clearTimeout(t);
+      }
+    }
+    if (alreadyChunky) {
+      nearmissShownRef.current = false;
+    }
+  }, [gameState?.score]);
 
   const lastPersonalityTimestamp = useRef(0);
   useEffect(() => {
@@ -332,6 +360,13 @@ export default function GameScreen() {
               </View>
             )}
 
+            {/* Nearmiss Banner */}
+            {nearmissVisible && (
+              <View style={{ position: 'absolute', top: 80, alignSelf: 'center', backgroundColor: 'rgba(255,107,53,0.9)', borderRadius: 16, paddingHorizontal: 20, paddingVertical: 10, zIndex: 100 }}>
+                <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 18 }}>{nearmissText}</Text>
+              </View>
+            )}
+
             {/* Combo Popup */}
             <ComboPopup combo={gameState.combo} />
 
@@ -358,7 +393,9 @@ export default function GameScreen() {
 
         {/* Pause Button */}
         <TouchableOpacity
-          style={styles.pauseButton}
+          style={[styles.pauseButton, { minHeight: 44, minWidth: 44 }]}
+          accessibilityLabel="設定を開く"
+          accessibilityRole="button"
           onPress={() => setPaused(true)}
         >
           <Text style={styles.pauseButtonText}>||</Text>

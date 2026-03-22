@@ -46,91 +46,51 @@ export function setBGMEnabled(enabled: boolean) {
   bgmEnabled = enabled;
 }
 
-// ---- BGM Engine ----
-// C-Am-F-G chord progression loop, 120BPM, 4 bars
-// 3-4 OscillatorNodes, triangle + sine waves
+// ---- BGM Engine (expo-av MP3) ----
+import { Audio } from 'expo-av';
 
-let bgmIntervalId: ReturnType<typeof setTimeout> | null = null;
-let bgmGainNode: GainNode | null = null;
+let _bgmNormal: Audio.Sound | null = null;
+let _bgmFever: Audio.Sound | null = null;
+let _currentBGMMode: 'normal' | 'fever' | null = null;
+let _bgmLoaded = false;
 
-export function playBGM(mode: 'normal' | 'fever' = 'normal'): void {
-  if (!bgmEnabled) return;
-  stopBGM();
-  const ctx = getAudioContext();
-  if (!ctx) return;
-
-  const gain = ctx.createGain();
-  gain.gain.value = bgmVolume;
-  gain.connect(ctx.destination);
-  bgmGainNode = gain;
-
-  const bpm = mode === 'fever' ? 140 : 96;
-  const beat8th = (60 / bpm) / 2;
-
-  const CHORD_PROGRESSION = [
-    [261.63, 329.63, 392.00],
-    [220.00, 261.63, 329.63],
-    [174.61, 220.00, 261.63],
-    [196.00, 246.94, 293.66],
-  ];
-  const BASS_NOTES = [130.81, 110.00, 87.31, 98.00];
-  const MELODY = mode === 'fever'
-    ? [1047, 988, 880, 988, 1047, 1047, 1047, 988, 880, 988, 1047, 988, 880, 784, 880, 1047]
-    : [523, 494, 440, 494, 523, 523, 523, 494, 440, 494, 523, 494, 440, 392, 440, 523];
-
-  let step = 0;
-
-  const tick = () => {
-    const ctx2 = getAudioContext();
-    if (!ctx2 || !bgmGainNode) return;
-    const t = ctx2.currentTime;
-    const beat8 = step % 8;
-    const chordIndex = Math.floor(step / 8) % 4;
-    const chord = CHORD_PROGRESSION[chordIndex];
-
-    if (beat8 === 0) {
-      chord.forEach(freq => {
-        const osc = ctx2.createOscillator(); const g = ctx2.createGain();
-        osc.type = 'triangle'; osc.frequency.setValueAtTime(freq, t);
-        g.gain.setValueAtTime(bgmVolume * 0.07, t);
-        g.gain.exponentialRampToValueAtTime(0.001, t + beat8th * 8);
-        osc.connect(g); g.connect(ctx2.destination); osc.start(t); osc.stop(t + beat8th * 8.1);
-      });
-      const bOsc = ctx2.createOscillator(); const bGain = ctx2.createGain();
-      bOsc.type = 'sine'; bOsc.frequency.setValueAtTime(BASS_NOTES[chordIndex], t);
-      bGain.gain.setValueAtTime(bgmVolume * 0.09, t);
-      bGain.gain.exponentialRampToValueAtTime(0.001, t + beat8th * 7);
-      bOsc.connect(bGain); bGain.connect(ctx2.destination); bOsc.start(t); bOsc.stop(t + beat8th * 8);
-    }
-
-    const mOsc = ctx2.createOscillator(); const mGain = ctx2.createGain();
-    mOsc.type = 'sine'; mOsc.frequency.setValueAtTime(MELODY[step % MELODY.length], t);
-    mGain.gain.setValueAtTime(0, t); mGain.gain.linearRampToValueAtTime(bgmVolume * 0.11, t + 0.02);
-    mGain.gain.exponentialRampToValueAtTime(0.001, t + beat8th * 0.85);
-    mOsc.connect(mGain); mGain.connect(ctx2.destination); mOsc.start(t); mOsc.stop(t + beat8th);
-
-    const tOsc = ctx2.createOscillator(); const tGain = ctx2.createGain();
-    tOsc.type = 'triangle'; tOsc.frequency.setValueAtTime(MELODY[step % MELODY.length] * 2, t);
-    tGain.gain.setValueAtTime(bgmVolume * 0.02, t);
-    tGain.gain.exponentialRampToValueAtTime(0.001, t + beat8th * 0.4);
-    tOsc.connect(tGain); tGain.connect(ctx2.destination); tOsc.start(t); tOsc.stop(t + beat8th * 0.4);
-
-    step++;
-  };
-
-  tick();
-  bgmIntervalId = setInterval(tick, beat8th * 1000);
+export async function loadBGMAsync(): Promise<void> {
+  if (_bgmLoaded) return;
+  try {
+    const { sound: sn } = await Audio.Sound.createAsync(
+      require('../../assets/sounds/bgm_normal.mp3'),
+      { isLooping: true, volume: 0.5, shouldPlay: false }
+    );
+    const { sound: sf } = await Audio.Sound.createAsync(
+      require('../../assets/sounds/bgm_fever.mp3'),
+      { isLooping: true, volume: 0.6, shouldPlay: false }
+    );
+    _bgmNormal = sn;
+    _bgmFever = sf;
+    _bgmLoaded = true;
+  } catch {
+    // MP3ファイル未配置時はスキップ（ビルドエラーにならない）
+  }
 }
 
-export function stopBGM(): void {
-  if (bgmIntervalId !== null) {
-    clearInterval(bgmIntervalId);
-    bgmIntervalId = null;
-  }
-  if (bgmGainNode) {
-    try { bgmGainNode.disconnect(); } catch {}
-    bgmGainNode = null;
-  }
+export async function playBGM(mode: 'normal' | 'fever' = 'normal'): Promise<void> {
+  if (!bgmEnabled) return;
+  if (_currentBGMMode === mode) return;
+  await stopBGM();
+  _currentBGMMode = mode;
+  const sound = mode === 'fever' ? _bgmFever : _bgmNormal;
+  if (!sound) return;
+  try {
+    await sound.setVolumeAsync(bgmVolume);
+    await sound.setPositionAsync(0);
+    await sound.playAsync();
+  } catch {}
+}
+
+export async function stopBGM(): Promise<void> {
+  _currentBGMMode = null;
+  try { if (_bgmNormal) await _bgmNormal.stopAsync(); } catch {}
+  try { if (_bgmFever) await _bgmFever.stopAsync(); } catch {}
 }
 
 // ---- Sound generation helpers ----

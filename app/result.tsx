@@ -323,6 +323,14 @@ export default function ResultScreen() {
           </View>
         )}
 
+        {/* 7日ストリーク達成バナー */}
+        {currentStreak > 0 && currentStreak % 7 === 0 && (
+          <View style={{ backgroundColor: '#FFD700', borderRadius: 12, padding: 16, marginVertical: 12, alignItems: 'center' }}>
+            <Text style={{ fontWeight: 'bold', fontSize: 18, color: '#1a1a1a' }}>7日連続達成！ストリーク継続中！</Text>
+            <Text style={{ fontSize: 14, color: '#1a1a1a', marginTop: 4 }}>STREAK: {currentStreak}日</Text>
+          </View>
+        )}
+
         {/* OGP Image Preview (web) or Emoji Grid (native) */}
         {previewDataUrl && Platform.OS === "web" ? (
           <View style={styles.emojiCard}>
@@ -335,6 +343,16 @@ export default function ResultScreen() {
           </View>
         ) : null}
 
+        {/* Reward Ad UI */}
+        <TouchableOpacity
+          style={{ minHeight: 44, backgroundColor: '#FF6B35', borderRadius: 12, padding: 12, marginTop: 8, alignItems: 'center' }}
+          accessibilityLabel="リワード広告を見てコインを獲得"
+          accessibilityRole="button"
+          onPress={() => Alert.alert('まもなく実装', 'App Store配信後にリワード広告が利用可能になります')}
+        >
+          <Text style={{ color: 'white', fontWeight: 'bold' }}>リワード広告でコイン+50獲得</Text>
+        </TouchableOpacity>
+
         {/* Buttons */}
         <Text style={{ fontSize: 14, color: 'rgba(255,255,255,0.7)', textAlign: 'center', marginBottom: 8 }}>
           {score >= 8000
@@ -346,14 +364,18 @@ export default function ResultScreen() {
             : "コツをつかんで再挑戦！"}
         </Text>
         <TouchableOpacity
-          style={[styles.retryButton, { width: "90%", backgroundColor: "#FF6B35" }]}
+          style={[styles.retryButton, { width: "90%", backgroundColor: "#FF6B35", minHeight: 44 }]}
+          accessibilityLabel="もう一度プレイする"
+          accessibilityRole="button"
           onPress={() => router.replace("/game")}
         >
           <Text style={styles.buttonText}>もう一回！</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={styles.shareButton}
+          style={[styles.shareButton, { minHeight: 44 }]}
+          accessibilityLabel="結果をシェアする"
+          accessibilityRole="button"
           onPress={handleShare}
         >
           <Text style={styles.buttonText}>
@@ -362,7 +384,9 @@ export default function ResultScreen() {
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={styles.homeButton}
+          style={[styles.homeButton, { minHeight: 44 }]}
+          accessibilityLabel="タイトルに戻る"
+          accessibilityRole="button"
           onPress={() => router.replace("/")}
         >
           <Text style={styles.homeButtonText}>タイトルに戻る</Text>

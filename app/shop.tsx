@@ -65,7 +65,12 @@ export default function ShopScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
+        <TouchableOpacity
+          onPress={() => router.back()}
+          style={{ minHeight: 44, justifyContent: 'center' }}
+          accessibilityLabel="前の画面に戻る"
+          accessibilityRole="button"
+        >
           <Text style={styles.backButton}>← 戻る</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>SHOP</Text>

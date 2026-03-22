@@ -51,7 +51,12 @@ export default function SettingsScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
+        <TouchableOpacity
+          onPress={() => router.back()}
+          style={{ minHeight: 44, justifyContent: 'center' }}
+          accessibilityLabel="前の画面に戻る"
+          accessibilityRole="button"
+        >
           <Text style={styles.backButton}>← 戻る</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>SET 設定</Text>
@@ -172,7 +177,12 @@ export default function SettingsScreen() {
         <View style={styles.separator} />
 
         {/* Reset */}
-        <TouchableOpacity style={styles.resetButton} onPress={handleReset}>
+        <TouchableOpacity
+          style={[styles.resetButton, { minHeight: 44 }]}
+          accessibilityLabel="スコアデータをリセットする"
+          accessibilityRole="button"
+          onPress={handleReset}
+        >
           <Text style={styles.resetButtonText}>スコアリセット</Text>
         </TouchableOpacity>
 

@@ -7,7 +7,17 @@ import {
   Animated,
   Modal,
 } from "react-native";
+import Svg, { Circle, Text as SvgText } from "react-native-svg";
 import { COLORS } from "../constants/colors";
+
+function StepBadge({ number }: { number: number }) {
+  return (
+    <Svg width={48} height={48}>
+      <Circle cx="24" cy="24" r="22" fill="#FF6B35"/>
+      <SvgText fill="white" fontSize="22" fontWeight="bold" textAnchor="middle" x="24" y="31">{number}</SvgText>
+    </Svg>
+  );
+}
 
 interface TutorialOverlayProps {
   visible: boolean;
@@ -105,7 +115,9 @@ export const TutorialOverlay: React.FC<TutorialOverlayProps> = ({
             },
           ]}
         >
-          <Text style={styles.emoji}>{currentStep.emoji}</Text>
+          <View style={styles.emoji}>
+            <StepBadge number={parseInt(currentStep.emoji, 10)} />
+          </View>
           <Text style={styles.title}>{currentStep.title}</Text>
           <Text style={styles.description}>{currentStep.description}</Text>
 
@@ -155,8 +167,8 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   emoji: {
-    fontSize: 64,
     marginBottom: 16,
+    alignItems: "center",
   },
   title: {
     fontSize: 22,

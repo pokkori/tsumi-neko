@@ -15,6 +15,7 @@ import { DailyBadge } from "../src/components/DailyBadge";
 import { formatScore, formatHeight } from "../src/utils/format";
 import { COLORS } from "../src/constants/colors";
 import { CatTowerSVG } from "../src/components/CatTowerSVG";
+import { scheduleDailyReminderAsync } from "../src/utils/notifications";
 
 const STREAK_KEY = "streak_days";
 const STREAK_DATE_KEY = "streak_last_date";
@@ -72,6 +73,10 @@ export default function TitleScreen() {
         // ignore
       }
     })();
+  }, []);
+
+  useEffect(() => {
+    scheduleDailyReminderAsync();
   }, []);
 
   useEffect(() => {
@@ -133,7 +138,9 @@ export default function TitleScreen() {
       {/* Play Button */}
       <Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
         <TouchableOpacity
-          style={styles.playButton}
+          style={[styles.playButton, { minHeight: 44, minWidth: 44 }]}
+          accessibilityLabel="ゲームをスタートする"
+          accessibilityRole="button"
           onPress={() => router.push("/game")}
           activeOpacity={0.8}
         >
@@ -143,7 +150,9 @@ export default function TitleScreen() {
 
       {/* Daily Challenge */}
       <TouchableOpacity
-        style={styles.dailyButton}
+        style={[styles.dailyButton, { minHeight: 44, minWidth: 44 }]}
+        accessibilityLabel="デイリーチャレンジをプレイする"
+        accessibilityRole="button"
         onPress={() => router.push("/game?daily=true")}
         activeOpacity={0.8}
       >
@@ -209,19 +218,25 @@ export default function TitleScreen() {
       {/* Footer Buttons */}
       <View style={styles.footer}>
         <TouchableOpacity
-          style={styles.footerButton}
+          style={[styles.footerButton, { minHeight: 44, minWidth: 44 }]}
+          accessibilityLabel="図鑑を開く"
+          accessibilityRole="button"
           onPress={() => router.push("/collection")}
         >
           <Text style={styles.footerButtonText}>図鑑</Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={styles.footerButton}
+          style={[styles.footerButton, { minHeight: 44, minWidth: 44 }]}
+          accessibilityLabel="ショップを開く"
+          accessibilityRole="button"
           onPress={() => router.push("/shop")}
         >
           <Text style={styles.footerButtonText}>ショップ</Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={styles.footerButton}
+          style={[styles.footerButton, { minHeight: 44, minWidth: 44 }]}
+          accessibilityLabel="設定を開く"
+          accessibilityRole="button"
           onPress={() => router.push("/settings")}
         >
           <Text style={styles.footerButtonText}>設定</Text>
