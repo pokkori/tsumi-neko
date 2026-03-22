@@ -148,6 +148,13 @@ export default function GameScreen() {
     };
   }, [started, showTutorial]);
 
+  // フィーバーBGM切り替え: コンボ5以上でフィーバーモード
+  useEffect(() => {
+    if (!started || gameState?.phase !== 'playing') return;
+    const isFever = (gameState?.combo ?? 0) >= 5;
+    playBGM(isFever ? 'fever' : 'normal');
+  }, [started, gameState?.combo, gameState?.phase]);
+
   const navigateToResult = useCallback(() => {
     if (pendingResultParams.current) {
       router.replace({
